@@ -1,8 +1,8 @@
 /* 
  * Copyright (C) 2015-2016 The University of Sheffield.
  *
- * This file is part of gateplugin-JdbcLookup
- * (see https://github.com/johann-petrak/gateplugin-JdbcLookup)
+ * This file is part of gateplugin-CorpusStats
+ * (see https://github.com/johann-petrak/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
