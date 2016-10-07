@@ -1,0 +1,10 @@
+<!-- creole.xml for gateplugin-CorpusStats -->
+<CREOLE-DIRECTORY
+  ID="CorpusStats"
+  VERSION="0.1"
+  DESCRIPTION="Calculate statistics like tf, tfidf"
+  HELPURL=""
+>
+  <JAR scan="true">gateplugin-CorpusStats.jar</JAR>
+  <JAR>lib/guava-19.0.jar</JAR>
+</CREOLE-DIRECTORY>
