@@ -257,24 +257,26 @@ public class TfDf  extends AbstractDocumentProcessor {
   
 
   @Override
-  protected void beforeFirstDocument(Controller ctrl) {    
+  protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     synchronized (syncer) {
-    if(getMapTf() != null) {
-      System.err.println("INFO: shared maps already created");
-    } else {
-      // TODO: we may add a RT parameter reuseexisting: if that is true 
-      // and the output tsv file already exists, initialize the map from it.
-      // File file = gate.util.Files.fileFromURL(tsvFileUrl);
-      AtomicLongMap<String> m;
-      m = AtomicLongMap.create(new HashMap<String,Long>());
-      setMapTf(m);
-      m = AtomicLongMap.create(new HashMap<String,Long>());
-      setMapDf(m);
-      setNDocs(new AtomicInteger());
-      setNWords(new AtomicLong());
-      //System.err.println("GOT map: "+map.size());
-    }
+      if (getMapTf() != null) {
+        System.err.println("INFO: shared maps already created");
+      } else {
+        System.err.println("INFO: creating shared maps");
+        // TODO: we may add a RT parameter reuseexisting: if that is true 
+        // and the output tsv file already exists, initialize the map from it.
+        // File file = gate.util.Files.fileFromURL(tsvFileUrl);
+        AtomicLongMap<String> m;
+        m = AtomicLongMap.create(new HashMap<String, Long>());
+        setMapTf(m);
+        m = AtomicLongMap.create(new HashMap<String, Long>());
+        setMapDf(m);
+        setNDocs(new AtomicInteger());
+        setNWords(new AtomicLong());
+        //System.err.println("GOT map: "+map.size());
+        System.err.println("INFO: shared maps created");
+      }
     }
   }
     
@@ -326,7 +328,7 @@ public class TfDf  extends AbstractDocumentProcessor {
           throw new GateRuntimeException("Could not save tfidf file", ex);
         }
         
-        
+        setMapTf(null);
       } // if getMapTf() != null
     }
   }
