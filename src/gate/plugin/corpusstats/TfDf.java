@@ -236,13 +236,13 @@ public class TfDf  extends AbstractDocumentProcessor {
     synchronized (syncObject) {
       mapTf = (AtomicLongMap<String>)sharedData.get("mapTf");
       if (mapTf != null) {
-        System.err.println("INFO: shared maps already created");
+        System.err.println("INFO: shared maps already created in duplicate "+duplicateId+" of PR "+this.getName());
         mapDf = (AtomicLongMap<String>)sharedData.get("mapDf");
         nDocs = (AtomicInteger)sharedData.get("nDocs");
         nWords = (AtomicLong)sharedData.get("nWords");
         //System.err.println("INFO: copied existing maptf/mapdf/ndocs/nwords: "+mapTf+"/"+mapDf+"/"+nDocs+"/"+nWords);
       } else {
-        System.err.println("INFO: creating shared maps");
+        System.err.println("INFO: creating shared maps in duplicate "+duplicateId+" of PR "+this.getName());
         mapTf = AtomicLongMap.create(new HashMap<String, Long>());
         sharedData.put("mapTf", mapTf);
         mapDf = AtomicLongMap.create(new HashMap<String, Long>());
@@ -251,7 +251,7 @@ public class TfDf  extends AbstractDocumentProcessor {
         sharedData.put("nDocs", nDocs);
         nWords = new AtomicLong();
         sharedData.put("nWords", nWords);
-        System.err.println("INFO: shared maps created");
+        System.err.println("INFO: shared maps created in duplicate "+duplicateId+" of PR "+this.getName());
       }
     }
   }
