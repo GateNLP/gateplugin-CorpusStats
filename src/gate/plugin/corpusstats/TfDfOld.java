@@ -23,6 +23,10 @@
  * 
  *  TfIdf: Simple PR to calculate count DF and TF and calculate TFIDF scores,
  *  with support for parallel processing.
+ *  
+ *  Currently this is a simple implementation which uses two in-memory 
+ *  Guava AtomicLongMaps. This can probably made more memory efficient
+ *  by using a single map that maps to an atomic tuple for both DF and TF.
  */
 package gate.plugin.corpusstats;
 
@@ -32,17 +36,17 @@ import gate.api.AbstractDocumentProcessor;
 import gate.creole.metadata.*;
 import gate.util.GateRuntimeException;
 import java.net.URL;
+import com.google.common.util.concurrent.AtomicLongMap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @CreoleResource(name = "TfIdf",
         comment = "Calculate tf, df, and idf statistics over a corpus")
-public class TfDf  extends AbstractDocumentProcessor {
+public class TfDfOld  extends AbstractDocumentProcessor {
 
   private static final long serialVersionUID = 1L;
   
@@ -133,9 +137,10 @@ public class TfDf  extends AbstractDocumentProcessor {
 
   ////////////////////// FIELDS
   
-  private ConcurrentHashMap<String,TermStats> map;
-  private LongAdder nDocs = null;
-  private LongAdder nWords = null;
+  private AtomicLongMap<String> mapTf = null;  
+  private AtomicLongMap<String> mapDf = null;
+  private AtomicInteger nDocs = null;
+  private AtomicLong nWords = null;
   
   private static final Object syncObject = new Object();
   
@@ -168,12 +173,12 @@ public class TfDf  extends AbstractDocumentProcessor {
 
     fireStatusChanged("TfIdf: running on " + document.getName() + "...");
 
-    HashSet<String> wordset = new HashSet<String>();
+    HashMap<String,Long> dmap = new HashMap<String,Long>();
     
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
-        doIt(document, ann, wordset);
+        doIt(document, ann, dmap);
         if(isInterrupted()) {
           throw new GateRuntimeException("TfIdf has been interrupted");
         }
@@ -183,7 +188,7 @@ public class TfDf  extends AbstractDocumentProcessor {
       for (Annotation containingAnn : containingAnns) {
         AnnotationSet containedAnns = gate.Utils.getContainedAnnotations(inputAnns, containingAnn);
         for (Annotation ann : containedAnns) {
-          doIt(document, ann, wordset);
+          doIt(document, ann, dmap);
           if(isInterrupted()) { 
             throw new GateRuntimeException("TfIdf has been interrupted");
           }
@@ -191,14 +196,21 @@ public class TfDf  extends AbstractDocumentProcessor {
       }
     }
 
-    nDocs.add(1);
+    // TODO:
+    // process per-document hash: add counts to TF map increment by 1 DF map
+    for(String key : dmap.keySet()) {
+      mapDf.addAndGet(key, 1);
+      mapTf.addAndGet(key, dmap.get(key));
+    }
+
+    nDocs.addAndGet(1);
     
     fireProcessFinished();
     fireStatusChanged("TfIdf: processing complete!");
     return document;
   }
   
-  private void doIt(Document doc, Annotation ann, Set<String> wordset) {
+  private void doIt(Document doc, Annotation ann, HashMap<String,Long> dmap) {
     String key;
     FeatureMap fm = ann.getFeatures();
     if (getKeyFeature() == null || getKeyFeature().isEmpty()) {
@@ -206,18 +218,14 @@ public class TfDf  extends AbstractDocumentProcessor {
     } else {
       key = (String) fm.get(getKeyFeature());
     }
-    // we actually have a word to count
     if (key != null) {
-      // count total number of words found
-      nWords.add(1);
-      // check if we have seen this word in this document already:
-      // if no, increase document frequency and remember it 
-      if(!wordset.contains(key)) {
-        wordset.add(key);
-        map.computeIfAbsent(key,(k -> new TermStats())).incrementDf();
+      nWords.addAndGet(1);
+      Long curCount = dmap.get(key);
+      if(curCount == null) {
+        dmap.put(key,1L);
+      } else {
+        dmap.put(key,curCount+1L);
       }
-      // also add to the term frequency
-      map.computeIfAbsent(key,(k -> new TermStats())).incrementTf();
     }
   }
   
@@ -226,19 +234,22 @@ public class TfDf  extends AbstractDocumentProcessor {
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     synchronized (syncObject) {
-      map = (ConcurrentHashMap<String,TermStats>)sharedData.get("map");
-      if (map != null) {
+      mapTf = (AtomicLongMap<String>)sharedData.get("mapTf");
+      if (mapTf != null) {
         System.err.println("INFO: shared maps already created in duplicate "+duplicateId+" of PR "+this.getName());
-        nDocs = (LongAdder)sharedData.get("nDocs");
-        nWords = (LongAdder)sharedData.get("nWords");
+        mapDf = (AtomicLongMap<String>)sharedData.get("mapDf");
+        nDocs = (AtomicInteger)sharedData.get("nDocs");
+        nWords = (AtomicLong)sharedData.get("nWords");
         //System.err.println("INFO: copied existing maptf/mapdf/ndocs/nwords: "+mapTf+"/"+mapDf+"/"+nDocs+"/"+nWords);
       } else {
         System.err.println("INFO: creating shared maps in duplicate "+duplicateId+" of PR "+this.getName());
-        map = new ConcurrentHashMap<String,TermStats>(1024*1024,32,32);
-        sharedData.put("map", map);
-        nDocs = new LongAdder();
+        mapTf = AtomicLongMap.create(new HashMap<String, Long>());
+        sharedData.put("mapTf", mapTf);
+        mapDf = AtomicLongMap.create(new HashMap<String, Long>());
+        sharedData.put("mapDf", mapDf);
+        nDocs = new AtomicInteger();
         sharedData.put("nDocs", nDocs);
-        nWords = new LongAdder();
+        nWords = new AtomicLong();
         sharedData.put("nWords", nWords);
         System.err.println("INFO: shared maps created in duplicate "+duplicateId+" of PR "+this.getName());
       }
@@ -249,12 +260,12 @@ public class TfDf  extends AbstractDocumentProcessor {
   @Override
   protected void afterLastDocument(Controller ctrl, Throwable t) {
     synchronized (syncObject) {
-      map = (ConcurrentHashMap<String,TermStats>)sharedData.get("map");
-      if (map != null) {
+      mapTf = (AtomicLongMap<String>)sharedData.get("mapTf");
+      if (mapTf != null) {
         
-        long ndocs = nDocs.sum();
-        long nterms = map.size();
-        long nwords = nWords.sum();
+        int ndocs = nDocs.get();
+        int nterms = mapTf.size();
+        long nwords = nWords.get();
         
         File file = gate.util.Files.fileFromURL(sumsFileUrl);
         System.err.println("Storing total counts to file " + file);
@@ -281,9 +292,9 @@ public class TfDf  extends AbstractDocumentProcessor {
           // tf=term frequency
           // df=document frequency
           pw.println("term\ttf\tdf");
-          for(String key : map.keySet()) {
-            long tf = map.get(key).getTf();
-            long df = map.get(key).getDf();
+          for(String key : mapTf.asMap().keySet()) {
+            long tf = mapTf.get(key);
+            long df = mapDf.get(key);
             pw.print(key);
             pw.print("\t");
             pw.print(tf);
@@ -294,8 +305,8 @@ public class TfDf  extends AbstractDocumentProcessor {
           throw new GateRuntimeException("Could not save tfidf file", ex);
         }
         
-        map = null;
-        sharedData.remove("map");
+        mapTf = null;
+        sharedData.remove("mapTf");
       } // if getMapTf() != null
     }
   }
@@ -305,14 +316,6 @@ public class TfDf  extends AbstractDocumentProcessor {
   }
   
 
-  private static class TermStats {
-    private LongAdder tf = new LongAdder();
-    private LongAdder df = new LongAdder();
-    public void incrementTf() { tf.add(1); }
-    public void incrementDf() { df.add(1); }
-    public long getTf() { return tf.sum(); }
-    public long getDf() { return df.sum(); }
-  }
   
   
 } // class JdbcLookup
