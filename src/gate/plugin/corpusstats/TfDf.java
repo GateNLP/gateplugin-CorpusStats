@@ -30,6 +30,7 @@ package gate.plugin.corpusstats;
 import gate.*;
 import gate.api.AbstractDocumentProcessor;
 import gate.creole.metadata.*;
+import gate.util.Benchmark;
 import gate.util.GateRuntimeException;
 import java.net.URL;
 import java.io.File;
@@ -170,6 +171,8 @@ public class TfDf  extends AbstractDocumentProcessor {
 
     HashSet<String> wordset = new HashSet<String>();
     
+    long startTime = Benchmark.startPoint();
+    
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
@@ -192,6 +195,8 @@ public class TfDf  extends AbstractDocumentProcessor {
     }
 
     nDocs.add(1);
+    benchmarkCheckpoint(startTime, "__TfIdfProcess");
+    
     
     fireProcessFinished();
     fireStatusChanged("TfIdf: processing complete!");

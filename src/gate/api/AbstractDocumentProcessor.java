@@ -31,6 +31,8 @@ import gate.creole.ResourceInstantiationException;
 import gate.creole.AbstractLanguageAnalyser;
 import gate.creole.ExecutionException;
 import gate.creole.metadata.Sharable;
+import gate.util.Benchmark;
+import gate.util.Benchmarkable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 //import java.util.Optional;
@@ -41,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractDocumentProcessor
         extends AbstractLanguageAnalyser
-        implements Serializable, ControllerAwarePR {
+        implements Serializable, ControllerAwarePR, Benchmarkable {
 
   /**
    *
@@ -194,6 +196,29 @@ public abstract class AbstractDocumentProcessor
   protected abstract void afterLastDocument(Controller ctrl, Throwable t);
 
   protected abstract void finishedNoDocument(Controller ctrl, Throwable t);
+  
+  protected void benchmarkCheckpoint(long startTime, String name) {
+    if (Benchmark.isBenchmarkingEnabled()) {
+      Benchmark.checkPointWithDuration(
+              Benchmark.startPoint() - startTime,
+              Benchmark.createBenchmarkId(name, this.getBenchmarkId()),
+              this, null);
+    }
+  }
+
+  public String getBenchmarkId() {
+    return benchmarkId;
+  }
+
+  public void setBenchmarkId(String string) {
+    benchmarkId = string;
+  }
+  private String benchmarkId = this.getName();
+
+  
+  
+  
+  
   
   /**
    * Implement high-level API functions that can be used without importing

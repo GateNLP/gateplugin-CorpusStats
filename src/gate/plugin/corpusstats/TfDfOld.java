@@ -37,6 +37,7 @@ import gate.creole.metadata.*;
 import gate.util.GateRuntimeException;
 import java.net.URL;
 import com.google.common.util.concurrent.AtomicLongMap;
+import gate.util.Benchmark;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -175,6 +176,7 @@ public class TfDfOld  extends AbstractDocumentProcessor {
 
     HashMap<String,Long> dmap = new HashMap<String,Long>();
     
+    long startTime = Benchmark.startPoint();
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
@@ -204,6 +206,7 @@ public class TfDfOld  extends AbstractDocumentProcessor {
     }
 
     nDocs.addAndGet(1);
+    benchmarkCheckpoint(startTime, "__TfIdfOldProcess");
     
     fireProcessFinished();
     fireStatusChanged("TfIdf: processing complete!");
