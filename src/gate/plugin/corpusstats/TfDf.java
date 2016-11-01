@@ -36,9 +36,12 @@ import java.net.URL;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
 @CreoleResource(name = "TfIdf",
@@ -134,11 +137,18 @@ public class TfDf  extends AbstractDocumentProcessor {
 
   ////////////////////// FIELDS
   
+  // these fields will contain references to objects which are shared
+  // because all duplicated copies of the PR
+  
   private ConcurrentHashMap<String,TermStats> map;
   private LongAdder nDocs = null;
   private LongAdder nWords = null;
   
   private static final Object syncObject = new Object();
+  
+  // fields local to each duplicated PR
+  private int mostFrequentWordFreq = 0;
+  private int documentWordFreq = 0;
   
   ////////////////////// PROCESSING
   
@@ -169,14 +179,19 @@ public class TfDf  extends AbstractDocumentProcessor {
 
     fireStatusChanged("TfIdf: running on " + document.getName() + "...");
 
-    HashSet<String> wordset = new HashSet<String>();
+    // we first count the terms in this document in our own map, then 
+    // add the final counts to the global map.
+    HashMap<String,Integer> wordcounts = new HashMap<String,Integer>();
     
     long startTime = Benchmark.startPoint();
+    
+    mostFrequentWordFreq = 0;
+    documentWordFreq = 0;
     
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
-        doIt(document, ann, wordset);
+        doIt(document, ann, wordcounts);
         if(isInterrupted()) {
           throw new GateRuntimeException("TfIdf has been interrupted");
         }
@@ -186,13 +201,23 @@ public class TfDf  extends AbstractDocumentProcessor {
       for (Annotation containingAnn : containingAnns) {
         AnnotationSet containedAnns = gate.Utils.getContainedAnnotations(inputAnns, containingAnn);
         for (Annotation ann : containedAnns) {
-          doIt(document, ann, wordset);
+          doIt(document, ann, wordcounts);
           if(isInterrupted()) { 
             throw new GateRuntimeException("TfIdf has been interrupted");
           }
         }
       }
     }
+    
+    // now add the locally counted term frequencies to the global map
+    // also add the weighted/normalized term frequencies
+    
+    for(String key : wordcounts.keySet()) {
+      map.computeIfAbsent(key,(k -> new TermStats())).incrementTfBy(wordcounts.get(key));
+      map.computeIfAbsent(key,(k -> new TermStats())).incrementWTfBy(((double)wordcounts.get(key))/((double)documentWordFreq));
+      map.computeIfAbsent(key,(k -> new TermStats())).incrementNTfBy(((double)wordcounts.get(key))/((double)mostFrequentWordFreq));
+    }
+    
 
     nDocs.add(1);
     benchmarkCheckpoint(startTime, "__TfIdfProcess");
@@ -203,7 +228,9 @@ public class TfDf  extends AbstractDocumentProcessor {
     return document;
   }
   
-  private void doIt(Document doc, Annotation ann, Set<String> wordset) {
+  // NOTE: this method updates the global fields documentWordFreq
+  // and 
+  private void doIt(Document doc, Annotation ann, Map<String,Integer> wordmap) {
     String key;
     FeatureMap fm = ann.getFeatures();
     if (getKeyFeature() == null || getKeyFeature().isEmpty()) {
@@ -215,14 +242,21 @@ public class TfDf  extends AbstractDocumentProcessor {
     if (key != null) {
       // count total number of words found
       nWords.add(1);
+      documentWordFreq += 1;
       // check if we have seen this word in this document already:
       // if no, increase document frequency and remember it 
-      if(!wordset.contains(key)) {
-        wordset.add(key);
+      if(!wordmap.containsKey(key)) {
+        wordmap.put(key,1);
+        if(mostFrequentWordFreq == 0) mostFrequentWordFreq = 1;
+        // lets also add to the document frequency right here ....
         map.computeIfAbsent(key,(k -> new TermStats())).incrementDf();
+      } else {
+        int thisWf = wordmap.get(key)+1;
+        wordmap.put(key, thisWf);  // increase the count in our own map
+        if(thisWf > mostFrequentWordFreq) {
+          mostFrequentWordFreq = thisWf;
+        }
       }
-      // also add to the term frequency
-      map.computeIfAbsent(key,(k -> new TermStats())).incrementTf();
     }
   }
   
@@ -254,12 +288,13 @@ public class TfDf  extends AbstractDocumentProcessor {
   @Override
   protected void afterLastDocument(Controller ctrl, Throwable t) {
     synchronized (syncObject) {
+      long startTime = Benchmark.startPoint();
       map = (ConcurrentHashMap<String,TermStats>)sharedData.get("map");
       if (map != null) {
         
         long ndocs = nDocs.sum();
         long nterms = map.size();
-        long nwords = nWords.sum();
+        long nwords = nWords.sum();        
         
         File file = gate.util.Files.fileFromURL(sumsFileUrl);
         System.err.println("Storing total counts to file " + file);
@@ -285,15 +320,35 @@ public class TfDf  extends AbstractDocumentProcessor {
           // output the header
           // tf=term frequency
           // df=document frequency
-          pw.println("term\ttf\tdf");
+          // ntf=tf normalized by each maximum tf per document
+          // wtf=tf weighted by number of words per document
+          pw.println("term\ttf\tdf\tntf\twtf\tidf\ttfidf\tntfidf\twtfidf");
           for(String key : map.keySet()) {
             long tf = map.get(key).getTf();
             long df = map.get(key).getDf();
+            double ntf = map.get(key).getNTf();
+            double wtf = map.get(key).getWTf();
+            double idf = Math.log(((double)ndocs)/df);
+            double tfidf = tf * idf;
+            double ntfidf = ntf * idf;
+            double wtfidf = wtf * idf;
             pw.print(key);
             pw.print("\t");
             pw.print(tf);
             pw.print("\t");
-            pw.println(df);
+            pw.print(df);
+            pw.print("\t");
+            pw.print(ntf);
+            pw.print("\t");
+            pw.print(wtf);
+            pw.print("\t");
+            pw.print(idf);
+            pw.print("\t");
+            pw.print(tfidf);
+            pw.print("\t");
+            pw.print(ntfidf);
+            pw.print("\t");
+            pw.println(wtfidf);
           }
         } catch (Exception ex) {
           throw new GateRuntimeException("Could not save tfidf file", ex);
@@ -302,6 +357,7 @@ public class TfDf  extends AbstractDocumentProcessor {
         map = null;
         sharedData.remove("map");
       } // if getMapTf() != null
+      benchmarkCheckpoint(startTime, "__TfIdfSave");
     }
   }
 
@@ -311,11 +367,18 @@ public class TfDf  extends AbstractDocumentProcessor {
   
 
   private static class TermStats {
-    private LongAdder tf = new LongAdder();
-    private LongAdder df = new LongAdder();
+    private final LongAdder tf = new LongAdder();
+    private final DoubleAdder wtf = new DoubleAdder();  // weighted tf: by document length
+    private final DoubleAdder ntf = new DoubleAdder();  // normalized tf: by maximum tf in document
+    private final LongAdder df = new LongAdder();
     public void incrementTf() { tf.add(1); }
     public void incrementDf() { df.add(1); }
+    public void incrementTfBy(int by) { tf.add(by); }
+    public void incrementWTfBy(double by) { wtf.add(by); }
+    public void incrementNTfBy(double by) { ntf.add(by); }
     public long getTf() { return tf.sum(); }
+    public double getWTf() { return wtf.sum(); }
+    public double getNTf() { return ntf.sum(); }
     public long getDf() { return df.sum(); }
   }
   
