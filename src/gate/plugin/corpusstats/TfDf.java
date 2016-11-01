@@ -37,15 +37,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
-@CreoleResource(name = "TfIdf",
-        comment = "Calculate tf, df, and idf statistics over a corpus")
+@CreoleResource(name = "TfDff",
+        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/TfDf",
+        comment = "Calculate tf, df, and additional statistics over a corpus")
 public class TfDf  extends AbstractDocumentProcessor {
 
   private static final long serialVersionUID = 1L;
@@ -69,7 +68,6 @@ public class TfDf  extends AbstractDocumentProcessor {
   
   protected String inputType = "";
   @RunTime
-  @Optional
   @CreoleParameter(
           comment = "The input annotation type",
           defaultValue = "Token")
