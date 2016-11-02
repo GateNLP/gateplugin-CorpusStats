@@ -132,7 +132,23 @@ public class TfDf  extends AbstractDocumentProcessor {
   }
   public URL getSumsFileUrl() { return sumsFileUrl; }
   
-
+  private int minTf = 1; 
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The minimum term frequency for the term stats to get saved",
+          defaultValue = "1"
+  )
+  public void setMinTf(Integer value) {
+    if(value==null) 
+      minTf = 1;
+    else 
+      minTf = value;
+  }
+  public Integer getMinTf() {
+    return minTf;
+  }
+  
   ////////////////////// FIELDS
   
   // these fields will contain references to objects which are shared
@@ -305,6 +321,9 @@ public class TfDf  extends AbstractDocumentProcessor {
           // ndocs=total number of documents
           pw.println("nwords\tnterms\tndocs");
           pw.println(nwords+"\t"+nterms+"\t"+ndocs);
+          System.err.println("Words: "+nwords);
+          System.err.println("Terms: "+nterms);
+          System.err.println("Docs:  "+ndocs);
         } catch (Exception ex) {
           throw new GateRuntimeException("Could not save tfidf file", ex);
         }
@@ -312,6 +331,7 @@ public class TfDf  extends AbstractDocumentProcessor {
         
         file = gate.util.Files.fileFromURL(tfDfFileUrl);
         System.err.println("Storing counts to file " + file);
+        int mintf = getMinTf();
         try (
                 FileOutputStream fos = new FileOutputStream(file);
                 PrintWriter pw = new PrintWriter(fos)) {
@@ -321,8 +341,12 @@ public class TfDf  extends AbstractDocumentProcessor {
           // ntf=tf normalized by each maximum tf per document
           // wtf=tf weighted by number of words per document
           pw.println("term\ttf\tdf\tntf\twtf\tidf\ttfidf\tntfidf\twtfidf");
+          int lines = 0;
           for(String key : map.keySet()) {
             long tf = map.get(key).getTf();
+            if(tf < mintf) {
+              continue;
+            }
             long df = map.get(key).getDf();
             double ntf = map.get(key).getNTf();
             double wtf = map.get(key).getWTf();
@@ -330,6 +354,7 @@ public class TfDf  extends AbstractDocumentProcessor {
             double tfidf = tf * idf;
             double ntfidf = ntf * idf;
             double wtfidf = wtf * idf;
+            lines++;
             pw.print(key);
             pw.print("\t");
             pw.print(tf);
@@ -348,6 +373,7 @@ public class TfDf  extends AbstractDocumentProcessor {
             pw.print("\t");
             pw.println(wtfidf);
           }
+          System.err.println("Term stats rows written to file: "+lines);
         } catch (Exception ex) {
           throw new GateRuntimeException("Could not save tfidf file", ex);
         }
