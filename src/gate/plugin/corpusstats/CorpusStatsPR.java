@@ -17,15 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 /**
- * 
+ *
  *  TfIdf: Simple PR to calculate count DF and TF and calculate TFIDF scores,
  *  with support for parallel processing.
  */
 package gate.plugin.corpusstats;
-
 
 import gate.*;
 import gate.api.AbstractDocumentProcessor;
@@ -33,25 +30,21 @@ import gate.creole.metadata.*;
 import gate.util.Benchmark;
 import gate.util.GateRuntimeException;
 import java.net.URL;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
-@CreoleResource(name = "TfDff",
-        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/TfDf",
+@CreoleResource(name = "CorpusStatsPR",
+        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsPR",
         comment = "Calculate tf, df, and additional statistics over a corpus")
-public class TfDf  extends AbstractDocumentProcessor {
+public class CorpusStatsPR extends AbstractDocumentProcessor {
 
   private static final long serialVersionUID = 1L;
-  
-  
-  
+
   protected String inputASName = "";
+
   @RunTime
   @Optional
   @CreoleParameter(
@@ -64,9 +57,9 @@ public class TfDf  extends AbstractDocumentProcessor {
   public String getInputAnnotationSet() {
     return inputASName;
   }
-  
-  
+
   protected String inputType = "";
+
   @RunTime
   @CreoleParameter(
           comment = "The input annotation type",
@@ -107,32 +100,79 @@ public class TfDf  extends AbstractDocumentProcessor {
   }
   protected String keyFeature = "";
 
-
-
-
-
-  
   private URL tfDfFileUrl;
+
   @RunTime
-  @CreoleParameter( 
+  @Optional
+  @CreoleParameter(
           comment = "The URL of the TSV file where to store the per-term counts"
   )
   public void setTfDfFileUrl(URL u) {
     tfDfFileUrl = u;
   }
-  public URL getTfDfFileUrl() { return tfDfFileUrl; }
+
+  public URL getTfDfFileUrl() {
+    return tfDfFileUrl;
+  }
+
+  
+  private boolean caseSensitive = true;
+  @RunTime
+  @CreoleParameter(comment = "If false, convert to lower case before calculating the stats", 
+          defaultValue = "true")
+  public void setCaseSensitive(Boolean val) {
+    caseSensitive = val;
+  }
+  public Boolean getCaseSensitive() {
+    return caseSensitive;
+  }
+  
+  Locale ccLocale = new Locale("en");
+  private String caseConversionLanguage = "en";
+  @RunTime
+  @CreoleParameter(comment = "Language for mapping to lower case, only relevant if caseSensitive=false",
+          defaultValue = "en")
+  public void setCaseConversionLanguage(String val) {
+    ccLocale = new Locale(val);
+    caseConversionLanguage = val;
+  }
+  public String getCaseConversionLanguage() {
+    return caseConversionLanguage;
+  }
+  
   
   private URL sumsFileUrl;
+
   @RunTime
-  @CreoleParameter( 
+  @Optional
+  @CreoleParameter(
           comment = "The URL of the TSV file where to store the global sums and counts"
   )
   public void setSumsFileUrl(URL u) {
     sumsFileUrl = u;
   }
-  public URL getSumsFileUrl() { return sumsFileUrl; }
-  
-  private int minTf = 1; 
+
+  public URL getSumsFileUrl() {
+    return sumsFileUrl;
+  }
+
+  private URL dataFileUrl;
+
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The URL of where to store the data in binary compressed format"
+  )
+  public void setDataFileUrl(URL u) {
+    dataFileUrl = u;
+  }
+
+  public URL getDataFileUrl() {
+    return dataFileUrl;
+  }
+
+  private int minTf = 1;
+
   @RunTime
   @Optional
   @CreoleParameter(
@@ -140,35 +180,65 @@ public class TfDf  extends AbstractDocumentProcessor {
           defaultValue = "1"
   )
   public void setMinTf(Integer value) {
-    if(value==null) 
+    if (value == null) {
       minTf = 1;
-    else 
+    } else {
       minTf = value;
+    }
   }
+
   public Integer getMinTf() {
     return minTf;
   }
   
-  ////////////////////// FIELDS
   
+  private boolean reuseExisting = false;
+  
+  /**
+   * Whether or not to load any existing stats data before processing.
+   * 
+   * If set to true and the binary data file already exists, it is loaded
+   * before processing starts and the counts for the run are added to that
+   * data. If the binary data file does not exist, the TSV files are loaded,
+   * if they exist. 
+   * <p>
+   * NOTE: If a pipeline is run several times in a row, the stats are 
+   * being reset to zero between runs if reuseExisting is false. However,
+   * if reuseExisting is false, the stats get saved when processing ends and
+   * loaded next time processing starts, so each run adds to the stats
+   * already there from previous runs!
+   * 
+   * @param val 
+   */
+  @RunTime
+  @Optional
+  @CreoleParameter(comment = "Should any existing stats data be loaded and reused?", defaultValue = "false")
+  public void setReuseExisting(Boolean val) {
+    reuseExisting = val;
+  }
+  public Boolean getReuseExisting() {
+    return reuseExisting;
+  }
+          
+          
+          
+  
+  
+
+  ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
-  
-  private ConcurrentHashMap<String,TermStats> map;
-  private LongAdder nDocs = null;
-  private LongAdder nWords = null;
-  
+  CorpusStatsData corpusStats;
   private static final Object syncObject = new Object();
-  
+
   // fields local to each duplicated PR
   private int mostFrequentWordFreq = 0;
   private int documentWordFreq = 0;
-  
+
   ////////////////////// PROCESSING
-  
   @Override
   protected Document process(Document document) {
-    
+
     AnnotationSet inputAS = null;
     if (inputASName == null
             || inputASName.isEmpty()) {
@@ -195,18 +265,18 @@ public class TfDf  extends AbstractDocumentProcessor {
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
-    HashMap<String,Integer> wordcounts = new HashMap<String,Integer>();
-    
+    HashMap<String, Integer> wordcounts = new HashMap<String, Integer>();
+
     long startTime = Benchmark.startPoint();
-    
+
     mostFrequentWordFreq = 0;
     documentWordFreq = 0;
-    
+
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
         doIt(document, ann, wordcounts);
-        if(isInterrupted()) {
+        if (isInterrupted()) {
           throw new GateRuntimeException("TfIdf has been interrupted");
         }
       }
@@ -216,35 +286,32 @@ public class TfDf  extends AbstractDocumentProcessor {
         AnnotationSet containedAnns = gate.Utils.getContainedAnnotations(inputAnns, containingAnn);
         for (Annotation ann : containedAnns) {
           doIt(document, ann, wordcounts);
-          if(isInterrupted()) { 
+          if (isInterrupted()) {
             throw new GateRuntimeException("TfIdf has been interrupted");
           }
         }
       }
     }
-    
+
     // now add the locally counted term frequencies to the global map
     // also add the weighted/normalized term frequencies
-    
-    for(String key : wordcounts.keySet()) {
-      map.computeIfAbsent(key,(k -> new TermStats())).incrementTfBy(wordcounts.get(key));
-      map.computeIfAbsent(key,(k -> new TermStats())).incrementWTfBy(((double)wordcounts.get(key))/((double)documentWordFreq));
-      map.computeIfAbsent(key,(k -> new TermStats())).incrementNTfBy(((double)wordcounts.get(key))/((double)mostFrequentWordFreq));
+    for (String key : wordcounts.keySet()) {
+      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementTfBy(wordcounts.get(key));
+      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(((double) wordcounts.get(key)) / ((double) documentWordFreq));
+      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(((double) wordcounts.get(key)) / ((double) mostFrequentWordFreq));
     }
-    
 
-    nDocs.add(1);
+    corpusStats.nDocs.add(1);
     benchmarkCheckpoint(startTime, "__TfIdfProcess");
-    
-    
+
     fireProcessFinished();
     fireStatusChanged("TfIdf: processing complete!");
     return document;
   }
-  
+
   // NOTE: this method updates the global fields documentWordFreq
   // and 
-  private void doIt(Document doc, Annotation ann, Map<String,Integer> wordmap) {
+  private void doIt(Document doc, Annotation ann, Map<String, Integer> wordmap) {
     String key;
     FeatureMap fm = ann.getFeatures();
     if (getKeyFeature() == null || getKeyFeature().isEmpty()) {
@@ -252,159 +319,89 @@ public class TfDf  extends AbstractDocumentProcessor {
     } else {
       key = (String) fm.get(getKeyFeature());
     }
-    // we actually have a word to count
+    if(!getCaseSensitive()) {
+      key = key.toLowerCase(ccLocale);
+    }
     if (key != null) {
       // count total number of words found
-      nWords.add(1);
+      corpusStats.nWords.add(1);
       documentWordFreq += 1;
       // check if we have seen this word in this document already:
       // if no, increase document frequency and remember it 
-      if(!wordmap.containsKey(key)) {
-        wordmap.put(key,1);
-        if(mostFrequentWordFreq == 0) mostFrequentWordFreq = 1;
+      if (!wordmap.containsKey(key)) {
+        wordmap.put(key, 1);
+        if (mostFrequentWordFreq == 0) {
+          mostFrequentWordFreq = 1;
+        }
         // lets also add to the document frequency right here ....
-        map.computeIfAbsent(key,(k -> new TermStats())).incrementDf();
+        corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementDf();
       } else {
-        int thisWf = wordmap.get(key)+1;
+        int thisWf = wordmap.get(key) + 1;
         wordmap.put(key, thisWf);  // increase the count in our own map
-        if(thisWf > mostFrequentWordFreq) {
+        if (thisWf > mostFrequentWordFreq) {
           mostFrequentWordFreq = thisWf;
         }
       }
     }
   }
-  
 
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     synchronized (syncObject) {
-      map = (ConcurrentHashMap<String,TermStats>)sharedData.get("map");
-      if (map != null) {
-        System.err.println("INFO: shared maps already created in duplicate "+duplicateId+" of PR "+this.getName());
-        nDocs = (LongAdder)sharedData.get("nDocs");
-        nWords = (LongAdder)sharedData.get("nWords");
-        //System.err.println("INFO: copied existing maptf/mapdf/ndocs/nwords: "+mapTf+"/"+mapDf+"/"+nDocs+"/"+nWords);
+      corpusStats = (CorpusStatsData)sharedData.get("corpusStats");
+      if (corpusStats != null) {        
+        System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
       } else {
-        System.err.println("INFO: creating shared maps in duplicate "+duplicateId+" of PR "+this.getName());
-        map = new ConcurrentHashMap<String,TermStats>(1024*1024,32,32);
-        sharedData.put("map", map);
-        nDocs = new LongAdder();
-        sharedData.put("nDocs", nDocs);
-        nWords = new LongAdder();
-        sharedData.put("nWords", nWords);
-        System.err.println("INFO: shared maps created in duplicate "+duplicateId+" of PR "+this.getName());
+        System.err.println("INFO: creating corpusStats in duplicate " + duplicateId + " of PR " + this.getName());
+        corpusStats = new CorpusStatsData();
+        corpusStats.map = new ConcurrentHashMap<String, TermStats>(1024 * 1024, 32, 32);
+        corpusStats.nDocs = new LongAdder();
+        corpusStats.nWords = new LongAdder();
+        corpusStats.isCaseSensitive = getCaseSensitive();
+        corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
+        sharedData.put("corpusStats", corpusStats);
+        System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
+      }
+      // Now at this point we have a CorpusStats instance for sure. However, 
+      // if reuseStats is true, we may still have to load it. 
+      // NOTE: if the PR is run several times in a row, then when we arrive
+      // here, the corpusstats object should always be initialized to empty,
+      // since we always remove it after processing has finished. 
+      if(getReuseExisting()) {
+        corpusStats.load(dataFileUrl, sumsFileUrl, tfDfFileUrl);
       }
     }
   }
-    
 
   @Override
   protected void afterLastDocument(Controller ctrl, Throwable t) {
     synchronized (syncObject) {
       long startTime = Benchmark.startPoint();
-      map = (ConcurrentHashMap<String,TermStats>)sharedData.get("map");
-      if (map != null) {
-        
-        long ndocs = nDocs.sum();
-        long nterms = map.size();
-        long nwords = nWords.sum();        
-        
-        File file = gate.util.Files.fileFromURL(sumsFileUrl);
-        System.err.println("Storing total counts to file " + file);
-        try (
-                FileOutputStream fos = new FileOutputStream(file);
-                PrintWriter pw = new PrintWriter(fos)) {
-          // output the header
-          // nwords=total number of words counted
-          // nterms=total number of terms / different words
-          // ndocs=total number of documents
-          pw.println("nwords\tnterms\tndocs");
-          pw.println(nwords+"\t"+nterms+"\t"+ndocs);
-          System.err.println("Words: "+nwords);
-          System.err.println("Terms: "+nterms);
-          System.err.println("Docs:  "+ndocs);
-        } catch (Exception ex) {
-          throw new GateRuntimeException("Could not save tfidf file", ex);
-        }
-
-        
-        file = gate.util.Files.fileFromURL(tfDfFileUrl);
-        System.err.println("Storing counts to file " + file);
-        int mintf = getMinTf();
-        try (
-                FileOutputStream fos = new FileOutputStream(file);
-                PrintWriter pw = new PrintWriter(fos)) {
-          // output the header
-          // tf=term frequency
-          // df=document frequency
-          // ntf=tf normalized by each maximum tf per document
-          // wtf=tf weighted by number of words per document
-          pw.println("term\ttf\tdf\tntf\twtf\tidf\ttfidf\tntfidf\twtfidf");
-          int lines = 0;
-          for(String key : map.keySet()) {
-            long tf = map.get(key).getTf();
-            if(tf < mintf) {
-              continue;
-            }
-            long df = map.get(key).getDf();
-            double ntf = map.get(key).getNTf();
-            double wtf = map.get(key).getWTf();
-            double idf = Math.log(((double)ndocs)/df);
-            double tfidf = tf * idf;
-            double ntfidf = ntf * idf;
-            double wtfidf = wtf * idf;
-            lines++;
-            pw.print(key);
-            pw.print("\t");
-            pw.print(tf);
-            pw.print("\t");
-            pw.print(df);
-            pw.print("\t");
-            pw.print(ntf);
-            pw.print("\t");
-            pw.print(wtf);
-            pw.print("\t");
-            pw.print(idf);
-            pw.print("\t");
-            pw.print(tfidf);
-            pw.print("\t");
-            pw.print(ntfidf);
-            pw.print("\t");
-            pw.println(wtfidf);
-          }
-          System.err.println("Term stats rows written to file: "+lines);
-        } catch (Exception ex) {
-          throw new GateRuntimeException("Could not save tfidf file", ex);
-        }
-        
-        map = null;
-        sharedData.remove("map");
-      } // if getMapTf() != null
+      // TODO: we had this here, but why do we need it?
+      corpusStats = (CorpusStatsData) sharedData.get("corpusStats");
+      if (corpusStats != null) {
+        corpusStats.save(dataFileUrl, sumsFileUrl, tfDfFileUrl, getMinTf());
+        // After each run, we clean up, so that the code before each run can 
+        // recreate or reload the data as if it was the first time
+        corpusStats.map = null;
+        corpusStats = null;
+        sharedData.remove("corpusStats");
+      } // if corpusstats is not null
       benchmarkCheckpoint(startTime, "__TfIdfSave");
     }
   }
 
   @Override
   protected void finishedNoDocument(Controller ctrl, Throwable t) {
+    // After each run, we clean up, so that the code before each run can 
+    // recreate or reload the data as if it was the first time
+    synchronized (syncObject) {
+    corpusStats.map = null;
+    corpusStats = null;
+    sharedData.remove("corpusStats");
+    }
   }
-  
 
-  private static class TermStats {
-    private final LongAdder tf = new LongAdder();
-    private final DoubleAdder wtf = new DoubleAdder();  // weighted tf: by document length
-    private final DoubleAdder ntf = new DoubleAdder();  // normalized tf: by maximum tf in document
-    private final LongAdder df = new LongAdder();
-    public void incrementTf() { tf.add(1); }
-    public void incrementDf() { df.add(1); }
-    public void incrementTfBy(int by) { tf.add(by); }
-    public void incrementWTfBy(double by) { wtf.add(by); }
-    public void incrementNTfBy(double by) { ntf.add(by); }
-    public long getTf() { return tf.sum(); }
-    public double getWTf() { return wtf.sum(); }
-    public double getNTf() { return ntf.sum(); }
-    public long getDf() { return df.sum(); }
-  }
-  
-  
+
 } // class JdbcLookup

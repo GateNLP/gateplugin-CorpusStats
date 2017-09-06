@@ -276,31 +276,17 @@
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName></featureName>
-          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>sumsFileUrl</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$statsTokenSums.tsv</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
+                  <string>statsList</string>
+                  <string>tfidf,wtfidf,ltfidf</string>
                 </entry>
                 <entry>
                   <string>inputAnnotationType</string>
                   <string>Token</string>
-                </entry>
-                <entry>
-                  <string>tfDfFileUrl</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$statsTokenTfDf.tsv</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>minTf</string>
-                  <int>1</int>
                 </entry>
                 <entry>
                   <string>document</string>
@@ -321,17 +307,21 @@
                   <string></string>
                 </entry>
                 <entry>
+                  <string>inputAnnotationSet</string>
+                  <string></string>
+                </entry>
+                <entry>
                   <string>keyFeature</string>
                   <string></string>
                 </entry>
                 <entry>
-                  <string>inputAnnotationSet</string>
-                  <string></string>
+                  <string>featurePrefix</string>
+                  <string>cs_</string>
                 </entry>
               </localMap>
             </runtimeParams>
-            <resourceType>gate.plugin.corpusstats.CorpusStatsPR</resourceType>
-            <resourceName>CorpusStatsPR</resourceName>
+            <resourceType>gate.plugin.corpusstats.AssignStatsPR</resourceType>
+            <resourceName>AssignStatsPR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap/>
@@ -354,7 +344,7 @@
       <collectionType>java.util.ArrayList</collectionType>
     </prList>
     <resourceType>gate.creole.ConditionalSerialAnalyserController</resourceType>
-    <resourceName>tfdfTokens</resourceName>
+    <resourceName>assignStats</resourceName>
     <initParams class="gate.util.persistence.MapPersistence">
       <mapType>gate.util.SimpleFeatureMapImpl</mapType>
       <localMap/>
