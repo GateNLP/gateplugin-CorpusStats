@@ -130,7 +130,7 @@ public class CorpusStatsData implements Serializable {
               long df = this.map.get(key).getDf();
               double ntf = this.map.get(key).getNTf();
               double wtf = this.map.get(key).getWTf();
-              double idf = Math.log(((double) ndocs) / df);
+              double idf = 1.0 + Math.log((((double) ndocs + 1.0)) / (df + 1.0));
               double tfidf = tf * idf;
               double ntfidf = ntf * idf;
               double wtfidf = wtf * idf;
