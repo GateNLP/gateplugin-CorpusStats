@@ -50,26 +50,69 @@ public abstract class AbstractDocumentProcessor
    */
   private Logger logger = Logger.getLogger(AbstractDocumentProcessor.class.getCanonicalName());
 
-  private int seenDocuments = 0;
+  
+  // This will be shared between all duplicates
+  protected AtomicInteger seenDocuments = null;
 
+  @Sharable
+  public void setSeenDocuments(AtomicInteger n) {
+    seenDocuments = n;
+  }
+  
+  public AtomicInteger getSeenDocuments() {
+    return seenDocuments;
+  }
+  
   protected Controller controller;
 
-  protected Throwable throwable;
-  
   
   private static final Object syncObject = new Object();
   
+  // because the setter for this is marked @Sharable, all duplicates will hold 
+  // the same reference after initialisation. This is updated in init() and remains 
+  // forever. This is the actual number of duplicates (1-based, not 0-based)
   protected AtomicInteger nDuplicates = null;
+  
   @Sharable
   public void setNDuplicates(AtomicInteger n) {
     nDuplicates = n;
   }
+  
   public AtomicInteger getNDuplicates() {
     return nDuplicates;
   }
   
   
+  // the following shared counter is used when processing starts to find out which invocation 
+  // of the controller started method is the last one, and when processing finishes to figure out which
+  // invocation of controller finished/aborted is the last one. The counter gets incremented
+  // for each controller started and decremented for each finished/aborted.
+  // During execution the counter should hold the actual number of running duplicates and should
+  // be equal to nDuplicates
+  protected AtomicInteger remainingDuplicates = null;
+  
+  @Sharable
+  public void setRemainingDuplicates(AtomicInteger n) {
+    remainingDuplicates = n;
+  }
+  
+  public AtomicInteger getRemainingDuplicates() {
+    return remainingDuplicates;
+  }
+  
+  protected Throwable lastError = null;
+  
+  @Sharable
+  public void setLastError(Throwable x) {
+    lastError = x;
+  }
+  
+  public Throwable getLastError() {
+    return lastError;
+  }
+    
   protected ConcurrentHashMap<String,Object> sharedData = null;
+  
   @Sharable
   public void setSharedData(ConcurrentHashMap<String,Object> v) {
     sharedData = v;
@@ -78,6 +121,9 @@ public abstract class AbstractDocumentProcessor
     return sharedData;
   }
   
+  // Each duplicate holds its own duplicate id after initialisation.
+  // The duplicate id is 0-based, not 1-based, so the first duplicate has id 0 and 
+  // the last nDuplicates-1
   protected int duplicateId = 0;
 
   //===============================================================================
@@ -100,15 +146,18 @@ public abstract class AbstractDocumentProcessor
     // nDuplicates is an AtomicInt which gets incremented whenever a resource
     // gets duplicated. 
     synchronized (syncObject) {
-      if(getNDuplicates() == null) {        
+      if(getNDuplicates() == null || getNDuplicates().get() == 0) {        
         System.err.println("DEBUG: creating first instance of PR "+this.getName());
-        setNDuplicates(new AtomicInteger(0));
+        setNDuplicates(new AtomicInteger(1));
+        duplicateId = 0;
         setSharedData(new ConcurrentHashMap<String,Object>());
-        System.err.println("DEBUG: created duplicate 0 of PR "+this.getName());
+        setSeenDocuments(new AtomicInteger(0));
+        setRemainingDuplicates(new AtomicInteger(0));        
+        System.err.println("DEBUG: "+this.getName()+" created duplicate "+duplicateId);
       } else {
-        int thisn = getNDuplicates().addAndGet(1);
+        int thisn = getNDuplicates().getAndAdd(1);
         duplicateId = thisn;
-        System.err.println("DEBUG: created duplicate "+thisn+" of PR "+this.getName());
+        System.err.println("DEBUG: created duplicate "+duplicateId+" of PR "+this.getName());
       }
     }
     return this;
@@ -116,10 +165,11 @@ public abstract class AbstractDocumentProcessor
 
   @Override
   public void execute() throws ExecutionException {
-    if (seenDocuments == 0) {
+    if (getSeenDocuments().get() == 0) {
+      System.err.println("DEBUG "+this.getName()+" Running beforeFirstDocument");
       beforeFirstDocument(controller);
     }
-    seenDocuments += 1;
+    getSeenDocuments().incrementAndGet();
     process(getDocument());
   }
 
@@ -128,11 +178,17 @@ public abstract class AbstractDocumentProcessor
           throws ExecutionException {
     // reset the flags for the next time the controller is run
     controller = arg0;
-    throwable = arg1;
-    if (seenDocuments > 0) {
-      afterLastDocument(arg0, arg1);
-    } else {
-      finishedNoDocument(arg0, arg1);
+    setLastError(arg1);
+    int tmp = getRemainingDuplicates().getAndDecrement();
+    System.err.println("DEBUG "+this.getName()+" controllerExecutionAborted invocation "+tmp+" for duplicate "+duplicateId);
+    if(tmp==1) {      
+      if (getSeenDocuments().get() > 0) {
+        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking afterLastDocument");
+        afterLastDocument(arg0, getLastError());
+      } else {
+        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking finishedNoDocument");
+        finishedNoDocument(arg0, getLastError());
+      }
     }
   }
 
@@ -140,10 +196,16 @@ public abstract class AbstractDocumentProcessor
   public void controllerExecutionFinished(Controller arg0)
           throws ExecutionException {
     controller = arg0;
-    if (seenDocuments > 0) {
-      afterLastDocument(arg0, null);
-    } else {
-      finishedNoDocument(arg0, null);
+    int tmp = getRemainingDuplicates().getAndDecrement();
+    System.err.println("DEBUG "+this.getName()+" controllerExecutionFinished invocation "+tmp+" for duplicate "+duplicateId);
+    if(tmp==1) {      
+      if (getSeenDocuments().get() > 0) {
+        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking afterLastDocument");
+        afterLastDocument(arg0, getLastError());
+      } else {
+        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking finishedNoDocument");
+        finishedNoDocument(arg0, getLastError());
+      }
     }
   }
 
@@ -151,7 +213,16 @@ public abstract class AbstractDocumentProcessor
   public void controllerExecutionStarted(Controller arg0)
           throws ExecutionException {
     controller = arg0;
-    seenDocuments = 0;
+    // we count up to the number of duplicates we have. The first invocation of this is also
+    // responsible for resetting the document counter (it needs to be the first because 
+    // at any later time, another duplicate could already have their execute method invoked 
+    int tmp = getRemainingDuplicates().incrementAndGet();
+    if(tmp==1) {
+      System.err.println("DEBUG "+this.getName()+" first controller started invocation, resetting error and doc count");
+      setLastError(null);
+      getSeenDocuments().set(0);
+    }
+    System.err.println("DEBUG "+this.getName()+" controller started invocation number "+tmp+" in duplicate "+duplicateId);
   }
   
 

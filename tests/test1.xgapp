@@ -2,13 +2,16 @@
   <urlList class="gate.util.persistence.CollectionPersistence">
     <localList>
       <gate.util.persistence.PersistenceManager-URLHolder>
-        <urlString>$relpath$..</urlString>
+        <urlString>$relpath$../</urlString>
       </gate.util.persistence.PersistenceManager-URLHolder>
       <gate.util.persistence.PersistenceManager-URLHolder>
-        <urlString>$gatehome$plugins/ANNIE</urlString>
+        <urlString>$gatehome$plugins/ANNIE/</urlString>
       </gate.util.persistence.PersistenceManager-URLHolder>
       <gate.util.persistence.PersistenceManager-URLHolder>
-        <urlString>$gatehome$plugins/Tools</urlString>
+        <urlString>$gatehome$plugins/Tools/</urlString>
+      </gate.util.persistence.PersistenceManager-URLHolder>
+      <gate.util.persistence.PersistenceManager-URLHolder>
+        <urlString>$gatehome$plugins/Developer_Tools/</urlString>
       </gate.util.persistence.PersistenceManager-URLHolder>
     </localList>
     <collectionType>java.util.ArrayList</collectionType>
@@ -251,14 +254,14 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
+                  <string>encoding</string>
+                  <string>UTF-8</string>
+                </entry>
+                <entry>
                   <string>tokeniserRulesURL</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$gatehome$plugins/ANNIE/resources/tokeniser/DefaultTokeniser.rules</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
                 </entry>
                 <entry>
                   <string>transducerGrammarURL</string>
@@ -316,7 +319,7 @@
                     <localList>
                       <string>p</string>
                     </localList>
-                    <collectionType>java.util.Arrays$ArrayList</collectionType>
+                    <collectionType>java.util.ArrayList</collectionType>
                   </gate.util.persistence.CollectionPersistence>
                 </entry>
               </localMap>
@@ -359,6 +362,10 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
+                  <string>minTf</string>
+                  <int>1</int>
+                </entry>
+                <entry>
                   <string>document</string>
                   <null/>
                 </entry>
@@ -380,8 +387,8 @@
                 </entry>
               </localMap>
             </runtimeParams>
-            <resourceType>gate.plugin.corpusstats.TfDf</resourceType>
-            <resourceName>TfDf</resourceName>
+            <resourceType>gate.plugin.corpusstats.CorpusStatsPR</resourceType>
+            <resourceName>CorpusStatsPR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap/>
@@ -405,7 +412,7 @@
       <collectionType>java.util.ArrayList</collectionType>
     </prList>
     <resourceType>gate.creole.ConditionalSerialAnalyserController</resourceType>
-    <resourceName>testTfDf</resourceName>
+    <resourceName>testCorpusStats</resourceName>
     <initParams class="gate.util.persistence.MapPersistence">
       <mapType>gate.util.SimpleFeatureMapImpl</mapType>
       <localMap/>
