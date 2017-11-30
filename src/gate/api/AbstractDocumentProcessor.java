@@ -206,10 +206,12 @@ public abstract class AbstractDocumentProcessor
     }
   }
 
+  @Override
   public String getBenchmarkId() {
     return benchmarkId;
   }
 
+  @Override
   public void setBenchmarkId(String string) {
     benchmarkId = string;
   }
