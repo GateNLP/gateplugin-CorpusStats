@@ -29,7 +29,7 @@ import java.util.zip.GZIPOutputStream;
  * file or two TSV files.
  * @author Johann Petrak
  */
-public class CorpusStatsData implements Serializable {
+public class CorpusStatsTfIdfData implements Serializable {
   public ConcurrentHashMap<String, TermStats> map;
   public LongAdder nDocs = null;
   public LongAdder nWords = null;  
@@ -53,8 +53,8 @@ public class CorpusStatsData implements Serializable {
                 ObjectInputStream ois = new ObjectInputStream(gis)
             ) {
           Object obj = ois.readObject();
-          if(obj instanceof CorpusStatsData) {
-            CorpusStatsData other = (CorpusStatsData)obj;
+          if(obj instanceof CorpusStatsTfIdfData) {
+            CorpusStatsTfIdfData other = (CorpusStatsTfIdfData)obj;
             map = other.map;
             nDocs = other.nDocs;
             nWords = other.nWords;

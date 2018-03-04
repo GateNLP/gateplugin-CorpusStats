@@ -330,8 +330,8 @@
                 </entry>
               </localMap>
             </runtimeParams>
-            <resourceType>gate.plugin.corpusstats.CorpusStatsPR</resourceType>
-            <resourceName>CorpusStatsPR</resourceName>
+            <resourceType>gate.plugin.corpusstats.CorpusStatsTfIdfPR</resourceType>
+            <resourceName>CorpusStatsTfIdfPR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap/>

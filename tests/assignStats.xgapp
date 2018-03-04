@@ -320,8 +320,8 @@
                 </entry>
               </localMap>
             </runtimeParams>
-            <resourceType>gate.plugin.corpusstats.AssignStatsPR</resourceType>
-            <resourceName>AssignStatsPR</resourceName>
+            <resourceType>gate.plugin.corpusstats.AssignStatsTfIdfPR</resourceType>
+            <resourceName>AssignStatsTfIdfPR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap/>

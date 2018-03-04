@@ -11,7 +11,7 @@ import java.util.Map;
  * Interface describing a stats function
  * @author Johann Petrak
  */
-public interface StatsFunction {
+public interface StatsTfIdfFunction {
   /**
    * All statistics function accept the following parameters and return a Double.
    * The Double may be null for special functions which are also configured to filter.
