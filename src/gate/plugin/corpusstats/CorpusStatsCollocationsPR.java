@@ -31,7 +31,10 @@ import gate.creole.metadata.*;
 import gate.util.Benchmark;
 import gate.util.GateRuntimeException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -263,10 +266,19 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   private int mostFrequentWordFreq = 0;
   private int documentWordFreq = 0;
 
+  
+  // Helper method: get the string for an annotation, from the right source
+  // and correctly case-folded
+  private String getStringForAnn(Annotation ann) {
+    return "NOTYETIMPLEMENTED!";
+  }
+  
   ////////////////////// PROCESSING
   @Override
   protected Document process(Document document) {
 
+    fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
+    
     AnnotationSet inputAS = null;
     if (inputASName == null
             || inputASName.isEmpty()) {
@@ -276,10 +288,19 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     }
 
     AnnotationSet inputAnns = null;
+    // TODO: BEGIN move to run init code
     if (inputType == null || inputType.isEmpty()) {
       throw new GateRuntimeException("Input annotation type must not be empty!");
     }
-    inputAnns = inputAS.get(inputType);
+    // if we have a split annotation type defined, we also need to find those    
+    HashSet<String> inputTypes = new HashSet<String>();
+    inputTypes.add(inputType);    
+    if(getSplitAnnotationType() != null && !getSplitAnnotationType().isEmpty()) {
+      inputTypes.add(getSplitAnnotationType());
+    }
+    // TODO: END
+    
+    inputAnns = inputAS.get(inputTypes);
 
     AnnotationSet containingAnns = null;
     if (spanType == null || spanType.isEmpty()) {
@@ -289,95 +310,157 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
-    fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
-
-    // we first count the terms in this document in our own map, then 
-    // add the final counts to the global map.
-    HashMap<String, Integer> wordcounts = new HashMap<String, Integer>();
+    // we first do the counting locally then add everythin to the global map.
+    // So we need to count terms, pairs and contexts. 
+    HashMap<String, Integer> termcounts = new HashMap<String, Integer>();
+    HashMap<String, Integer> paircounts = new HashMap<String, Integer>();
+    int contexts = 0;
 
     long startTime = Benchmark.startPoint();
 
-    mostFrequentWordFreq = 0;
-    documentWordFreq = 0;
-
-    if (containingAnns == null) {
-      // go through all input annotations 
-      for (Annotation ann : inputAnns) {
-        doIt(document, ann, wordcounts);
-        if (isInterrupted()) {
-          throw new GateRuntimeException("CorpusStatsCollocationsPR has been interrupted");
-        }
-      }
+    // method to do this: we create contexts first by finding the offsets 
+    // of the context span. This could be the whole document, containing annotation
+    // span 
+    // To simplify the whole process we always create a list of spans to
+    // process first. If we also do sliding windows, then that logic is done 
+    // separately for the spans
+    
+    List<Long> spanFromOffsets = new ArrayList<Long>();
+    List<Long> spanToOffsets = new ArrayList<Long>();
+    
+    if(containingAnns == null) {
+      spanFromOffsets.add(0L);
+      spanToOffsets.add(document.getContent().size());
     } else {
-      // go through the input annotations contained in the containing annotations
       for (Annotation containingAnn : containingAnns) {
-        AnnotationSet containedAnns = gate.Utils.getContainedAnnotations(inputAnns, containingAnn);
-        for (Annotation ann : containedAnns) {
-          doIt(document, ann, wordcounts);
-          if (isInterrupted()) {
-            throw new GateRuntimeException("CorpusStatsCollocationsPR has been interrupted");
-          }
-        }
+        spanFromOffsets.add(containingAnn.getStartNode().getOffset());
+        spanToOffsets.add(containingAnn.getEndNode().getOffset());        
       }
     }
+    
+    // we re-use these sets
+    HashSet<String> termsForContext = new HashSet<String>();
+    HashSet<String> pairsForContext = new HashSet<String>();
+    
+    for(int i=0;i<spanFromOffsets.size();i++) {
+      long fromOffset = spanFromOffsets.get(0);
+      long toOffset = spanFromOffsets.get(0);
+      // get the terms and maybe split annotations inside that span in document order as a list 
+      List<Annotation> inAnns = inputAnns.get(fromOffset, toOffset).inDocumentOrder();
+      if(inAnns.size() < 2) continue; // Spans with less than 2 elements are ignored
+      // now do the whole processing for each section split up by the split annotations
+      // however we only need to check if we actually have a span annotation type
+      // The following lists contain the indices of where a span starts to where
+      // a span ends in inAnns
+      List<Integer> spanStarts = new ArrayList<Integer>();
+      List<Integer> spanEnds = new ArrayList<Integer>();
+      if(!getSpanAnnotationType().isEmpty()) {
+        // get all the span positions in the inAnns list
+        boolean inSpan = false;
+        int j = 0;
+        for(Annotation inAnn : inAnns) {
+          if(!inSpan && inAnn.getType().equals(inputType)) {
+            spanStarts.add(j);
+            inSpan = true;
+          } else if(inSpan && inAnn.getType().equals(splitAnnotationType)) {
+            spanEnds.add(j-1);
+            inSpan = false;
+          }
+          j++;
+        } // for
+        // if after this loop we are still "inSpan" we need to add the latest
+        // ann index as the end
+        if(inSpan) spanEnds.add(j-1);
+        assert(spanEnds.size() == spanStarts.size());
+      } else {
+        // we just go from the first to the last
+        spanStarts.add(0);
+        spanEnds.add(inAnns.size()-1);
+      }
+      
+      // Now we have the actual spans described as the index ranges in spanStarts and spanEnds,
+      // so iterate over those
+      for(int j=0; j<spanStarts.size(); j++) {
+        int fromIndex = spanStarts.get(j);
+        int toIndex = spanEnds.get(j);
+        // again, if the span is < 2, skip it
+        int spanLength = toIndex-fromIndex+1;
+        if(spanLength<2) continue;
+        // OK, we have a span to process, if we have a sliding window size
+        // defined then slide the window if possible, otherwise just 
+        // process the span as one window. To use the same code, we just define
+        // the "working sliding window" size to be the length of the span length
+        int workingSlWSize = spanLength;
+        // TODO: need to check that the sliding window size is 0 or some value
+        // >= 2 in the runtime init code, so here we rely it is either 0 or valid
+        if(getSlidingWindowSize()>0) {
+          workingSlWSize = getSlidingWindowSize();
+        }
+        // now iterate the sliding window as often inside the span as possible
+        int nrWindows = spanLength-workingSlWSize;
+        for(int k=0; k<=nrWindows; k++) {
+          // count the context
+          contexts += 1;
+          // the annotations from 
+          // fromIndex+k to toIndex+k are getting processed to 
+          // count any occuring terms or pairs. Note that if a term
+          // or pair occurs more than once, we only count once! So we 
+          // create a set of all terms and a set of all pairs
+          // TODO: not sure what the fastest way to do this could be!
+          termsForContext.clear();
+          pairsForContext.clear();
+          for(int m=0; m<workingSlWSize; m++) {
+            Annotation termAnn = inAnns.get(fromIndex+k+m);
+            String term = getStringForAnn(termAnn);
+            termsForContext.add(term);
+            for(int n=m+1; n<workingSlWSize; n++) {
+              Annotation termAnn2 = inAnns.get(fromIndex+k+n);
+              String term2 = getStringForAnn(termAnn2);
+              if(term.compareTo(term2) < 0) {
+                pairsForContext.add(term+"|"+term2);
+              } else {
+                pairsForContext.add(term2+"|"+term);
+              }
+            } // inner for for term2
+          } // outer for loop for term1
+          // Now we have got the unique terms and pairs occuring in the context
+          // count them
+          for(String term : termsForContext) {
+            // TODO: call method for addint to termCount
+          }
+          for(String pair : pairsForContext) {
+            // TODO: call method for adding pairCount
+          }
+        }
+        
+      }
+      
+    }
+    
 
-    // now add the locally counted term frequencies to the global map
+    // TODO!!!now add the locally counted term frequencies to the global map
     // also add the weighted/normalized term frequencies
-    for (String key : wordcounts.keySet()) {
+    //for (String key : wordcounts.keySet()) {
       /* !!!
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementTfBy(wordcounts.get(key));
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(((double) wordcounts.get(key)) / ((double) documentWordFreq));
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(((double) wordcounts.get(key)) / ((double) mostFrequentWordFreq));
       */
-    }
+    //}
 
     corpusStats.nDocs.add(1);
-    benchmarkCheckpoint(startTime, "__TfIdfProcess");
+    benchmarkCheckpoint(startTime, "__CollocationsProcess");
 
     fireProcessFinished();
-    fireStatusChanged("TfIdf: processing complete!");
+    fireStatusChanged("CorpusStatsCollocations: processing complete!");
     return document;
   }
 
-  // NOTE: this method updates the global fields documentWordFreq
-  // and 
-  private void doIt(Document doc, Annotation ann, Map<String, Integer> wordmap) {
-    String key;
-    FeatureMap fm = ann.getFeatures();
-    if (getKeyFeature() == null || getKeyFeature().isEmpty()) {
-      key = Utils.cleanStringFor(document, ann);
-    } else {
-      key = (String) fm.get(getKeyFeature());
-    }
-    if(!getCaseSensitive()) {
-      key = key.toLowerCase(ccLocale);
-    }
-    if (key != null) {
-      // count total number of words found
-      
-      //!!! corpusStats.nWords.add(1);
-      documentWordFreq += 1;
-      // check if we have seen this word in this document already:
-      // if no, increase document frequency and remember it 
-      if (!wordmap.containsKey(key)) {
-        wordmap.put(key, 1);
-        if (mostFrequentWordFreq == 0) {
-          mostFrequentWordFreq = 1;
-        }
-        // lets also add to the document frequency right here ....
-        // !!! corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementDf();
-      } else {
-        int thisWf = wordmap.get(key) + 1;
-        wordmap.put(key, thisWf);  // increase the count in our own map
-        if (thisWf > mostFrequentWordFreq) {
-          mostFrequentWordFreq = thisWf;
-        }
-      }
-    }
-  }
 
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
+    // !!! TODO: more checking of parameters and make sure they return a proper
+    // canonical default value!
     // if reference null, create the global map
     synchronized (syncObject) {
       corpusStats = (CorpusStatsCollocationsData)sharedData.get("corpusStats");
