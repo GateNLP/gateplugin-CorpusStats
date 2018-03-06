@@ -261,7 +261,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
-    fireStatusChanged("TfIdf: running on " + document.getName() + "...");
+    fireStatusChanged("CorpusStatsTfIdfPR: running on " + document.getName() + "...");
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
@@ -305,7 +305,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     benchmarkCheckpoint(startTime, "__TfIdfProcess");
 
     fireProcessFinished();
-    fireStatusChanged("TfIdf: processing complete!");
+    fireStatusChanged("CorpusStatsTfIdfPR: processing complete!");
     return document;
   }
 
@@ -349,7 +349,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     synchronized (syncObject) {
-      corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStats");
+      corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStatsTfIdf");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
       } else {
@@ -360,7 +360,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
         corpusStats.nWords = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();
         corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
-        sharedData.put("corpusStats", corpusStats);
+        sharedData.put("corpusStatsTfIdf", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
       // Now at this point we have a CorpusStats instance for sure. However, 
@@ -379,14 +379,14 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     synchronized (syncObject) {
       long startTime = Benchmark.startPoint();
       // TODO: we had this here, but why do we need it?
-      corpusStats = (CorpusStatsTfIdfData) sharedData.get("corpusStats");
+      corpusStats = (CorpusStatsTfIdfData) sharedData.get("corpusStatsTfIdf");
       if (corpusStats != null) {
         corpusStats.save(dataFileUrl, sumsFileUrl, tfDfFileUrl, getMinTf());
         // After each run, we clean up, so that the code before each run can 
         // recreate or reload the data as if it was the first time
         corpusStats.map = null;
         corpusStats = null;
-        sharedData.remove("corpusStats");
+        sharedData.remove("corpusStatsTfIdf");
       } // if corpusstats is not null
       benchmarkCheckpoint(startTime, "__TfIdfSave");
     }
@@ -399,9 +399,9 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     synchronized (syncObject) {
     corpusStats.map = null;
     corpusStats = null;
-    sharedData.remove("corpusStats");
+    sharedData.remove("corpusStatsTfIdf");
     }
   }
 
 
-} // class JdbcLookup
+} // class 

@@ -19,8 +19,9 @@
  */
 /**
  *
- *  TfIdf: Simple PR to calculate count DF and TF and calculate TFIDF scores,
- *  with support for parallel processing.
+ *  CorpusStatsCollocationsPR: obtain statistics for pairs of words occuring
+ *  in the same context or sliding window.
+ * 
  */
 package gate.plugin.corpusstats;
 
@@ -36,9 +37,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
-@CreoleResource(name = "CorpusStatsTfIdfPR",
-        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsTfIdfPR",
-        comment = "Calculate tf, df, and additional statistics over a corpus")
+@CreoleResource(name = "CorpusStatsCollocationsPR",
+        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsCollocationsPR",
+        comment = "Calculate pairwise statistics like PMI ")
 public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
   private static final long serialVersionUID = 1L;
@@ -75,16 +76,16 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The optional containing annotation set type",
+          comment = "Annotation which indicates span within which the collocation is counted. If missing, whole document.",
           defaultValue = "")
-  public void setContainingAnnotationType(String val) {
-    this.containingType = val;
+  public void setSpanAnnotationType(String val) {
+    this.spanType = val;
   }
 
-  public String getContainingAnnotationType() {
-    return containingType;
+  public String getSpanAnnotationType() {
+    return spanType;
   }
-  protected String containingType = "";
+  protected String spanType = "";
 
   @RunTime
   @Optional
@@ -100,21 +101,51 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   }
   protected String keyFeature = "";
 
-  private URL tfDfFileUrl;
+  private URL pairStatsFileUrl;
 
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The URL of the TSV file where to store the per-term counts"
+          comment = "The URL of the TSV file where to store the collocation statistics"
   )
-  public void setTfDfFileUrl(URL u) {
-    tfDfFileUrl = u;
+  public void setPairStatsFileUrl(URL u) {
+    pairStatsFileUrl = u;
   }
 
-  public URL getTfDfFileUrl() {
-    return tfDfFileUrl;
+  public URL getPairStatsFileUrl() {
+    return pairStatsFileUrl;
   }
 
+  private Integer slidingWindowSize = 0;
+  
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "Size of sliding window within a span, if 0 or missing, no sliding window is used."
+  )  
+  public void setSlidingWindowSize(Integer value) {
+    slidingWindowSize = value;
+  }
+  
+  public Integer getSlidingWindowSize() {
+    return slidingWindowSize;
+  }
+  
+  private String splitAnnotationType = "";
+          
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "Type of annotations which separate pairs and prevent them to get counted. Default: none"
+  )
+  public void setSplitAnnotationType(String value) {
+    splitAnnotationType = value;
+  }
+  
+  public String getSplitAnnotationType() {
+    return splitAnnotationType;
+  }
+  
   
   private boolean caseSensitive = true;
   @RunTime
@@ -161,7 +192,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The URL of where to store the data in binary compressed format"
+          comment = "The URL of where to store the data in binary compressed format, not used if left empty"
   )
   public void setDataFileUrl(URL u) {
     dataFileUrl = u;
@@ -176,7 +207,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The minimum term frequency for the term stats to get saved",
+          comment = "The minimum term frequency for a term to get considered",
           defaultValue = "1"
   )
   public void setMinTf(Integer value) {
@@ -203,10 +234,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
    * if they exist. 
    * <p>
    * NOTE: If a pipeline is run several times in a row, the stats are 
-   * being reset to zero between runs if reuseExisting is false. However,
-   * if reuseExisting is false, the stats get saved when processing ends and
-   * loaded next time processing starts, so each run adds to the stats
-   * already there from previous runs!
+   * being reset to zero between runs if reuseExisting is false. 
    * 
    * @param val 
    */
@@ -228,7 +256,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
-  CorpusStatsTfIdfData corpusStats;
+  CorpusStatsCollocationsData corpusStats;
   private static final Object syncObject = new Object();
 
   // fields local to each duplicated PR
@@ -254,14 +282,14 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     inputAnns = inputAS.get(inputType);
 
     AnnotationSet containingAnns = null;
-    if (containingType == null || containingType.isEmpty()) {
+    if (spanType == null || spanType.isEmpty()) {
       // leave the containingAnns null to indicate we do not use containing annotations
     } else {
-      containingAnns = inputAS.get(containingType);
+      containingAnns = inputAS.get(spanType);
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
-    fireStatusChanged("TfIdf: running on " + document.getName() + "...");
+    fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
@@ -277,7 +305,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       for (Annotation ann : inputAnns) {
         doIt(document, ann, wordcounts);
         if (isInterrupted()) {
-          throw new GateRuntimeException("CorpusStatsTfIdfPR has been interrupted");
+          throw new GateRuntimeException("CorpusStatsCollocationsPR has been interrupted");
         }
       }
     } else {
@@ -287,7 +315,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         for (Annotation ann : containedAnns) {
           doIt(document, ann, wordcounts);
           if (isInterrupted()) {
-            throw new GateRuntimeException("CorpusStatsTfIdfPR has been interrupted");
+            throw new GateRuntimeException("CorpusStatsCollocationsPR has been interrupted");
           }
         }
       }
@@ -296,9 +324,11 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // now add the locally counted term frequencies to the global map
     // also add the weighted/normalized term frequencies
     for (String key : wordcounts.keySet()) {
+      /* !!!
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementTfBy(wordcounts.get(key));
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(((double) wordcounts.get(key)) / ((double) documentWordFreq));
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(((double) wordcounts.get(key)) / ((double) mostFrequentWordFreq));
+      */
     }
 
     corpusStats.nDocs.add(1);
@@ -324,7 +354,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     }
     if (key != null) {
       // count total number of words found
-      corpusStats.nWords.add(1);
+      
+      //!!! corpusStats.nWords.add(1);
       documentWordFreq += 1;
       // check if we have seen this word in this document already:
       // if no, increase document frequency and remember it 
@@ -334,7 +365,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           mostFrequentWordFreq = 1;
         }
         // lets also add to the document frequency right here ....
-        corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementDf();
+        // !!! corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementDf();
       } else {
         int thisWf = wordmap.get(key) + 1;
         wordmap.put(key, thisWf);  // increase the count in our own map
@@ -349,15 +380,15 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     synchronized (syncObject) {
-      corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStats");
+      corpusStats = (CorpusStatsCollocationsData)sharedData.get("corpusStats");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
       } else {
         System.err.println("INFO: creating corpusStats in duplicate " + duplicateId + " of PR " + this.getName());
-        corpusStats = new CorpusStatsTfIdfData();
-        corpusStats.map = new ConcurrentHashMap<String, TermStats>(1024 * 1024, 32, 32);
+        corpusStats = new CorpusStatsCollocationsData();
+        //!!!corpusStats.map = new ConcurrentHashMap<String, TermStats>(1024 * 1024, 32, 32);
         corpusStats.nDocs = new LongAdder();
-        corpusStats.nWords = new LongAdder();
+        //!!!corpusStats.nWords = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();
         corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
         sharedData.put("corpusStats", corpusStats);
@@ -369,7 +400,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       // here, the corpusstats object should always be initialized to empty,
       // since we always remove it after processing has finished. 
       if(getReuseExisting()) {
-        corpusStats.load(dataFileUrl, sumsFileUrl, tfDfFileUrl);
+        corpusStats.load(dataFileUrl, sumsFileUrl, pairStatsFileUrl);
       }
     }
   }
@@ -379,12 +410,12 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     synchronized (syncObject) {
       long startTime = Benchmark.startPoint();
       // TODO: we had this here, but why do we need it?
-      corpusStats = (CorpusStatsTfIdfData) sharedData.get("corpusStats");
+      corpusStats = (CorpusStatsCollocationsData) sharedData.get("corpusStats");
       if (corpusStats != null) {
-        corpusStats.save(dataFileUrl, sumsFileUrl, tfDfFileUrl, getMinTf());
+        corpusStats.save(dataFileUrl, sumsFileUrl, pairStatsFileUrl, getMinTf());
         // After each run, we clean up, so that the code before each run can 
         // recreate or reload the data as if it was the first time
-        corpusStats.map = null;
+        //!!!corpusStats.map = null;
         corpusStats = null;
         sharedData.remove("corpusStats");
       } // if corpusstats is not null
@@ -397,7 +428,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // After each run, we clean up, so that the code before each run can 
     // recreate or reload the data as if it was the first time
     synchronized (syncObject) {
-    corpusStats.map = null;
+    //!!!corpusStats.map = null;
     corpusStats = null;
     sharedData.remove("corpusStats");
     }
