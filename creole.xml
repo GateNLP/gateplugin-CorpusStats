@@ -6,4 +6,5 @@
   HELPURL="https://github.com/johann-petrak/gateplugin-CorpusStats"
 >
   <JAR scan="true">gateplugin-CorpusStats.jar</JAR>
+  <JAR>lib/commons-math3-3.6.1.jar</JAR>
 </CREOLE-DIRECTORY>

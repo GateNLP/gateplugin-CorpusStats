@@ -270,13 +270,33 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   // Helper method: get the string for an annotation, from the right source
   // and correctly case-folded
   private String getStringForAnn(Annotation ann) {
-    return "NOTYETIMPLEMENTED!";
+    String str = null;
+    if(getKeyFeature()==null || getKeyFeature().isEmpty()) {
+      str = gate.Utils.cleanStringFor(document, ann);
+    } else {
+      str = (String)ann.getFeatures().get(getKeyFeature());
+    }
+    if(str==null) str="";
+    if(!getCaseSensitive()) {
+      str = str.toLowerCase(ccLocale);
+    }
+    return str;
+  }
+  
+  private void incrementHashMapInteger(Map<String,Integer> map, String k, int by) {
+    Integer curval = map.get(k);
+    if(curval == null) {
+      map.put(k, by);
+    } else {
+      map.put(k, by+curval);
+    }
   }
   
   ////////////////////// PROCESSING
   @Override
   protected Document process(Document document) {
 
+    System.out.println("!!! DEBUG: processing document "+document.getName());
     fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
     
     AnnotationSet inputAS = null;
@@ -328,7 +348,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     List<Long> spanFromOffsets = new ArrayList<Long>();
     List<Long> spanToOffsets = new ArrayList<Long>();
     
-    if(containingAnns == null) {
+    if(containingAnns == null || containingAnns.isEmpty()) {
       spanFromOffsets.add(0L);
       spanToOffsets.add(document.getContent().size());
     } else {
@@ -342,9 +362,11 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     HashSet<String> termsForContext = new HashSet<String>();
     HashSet<String> pairsForContext = new HashSet<String>();
     
+    //System.out.println("DEBUG: span from offsets: "+spanFromOffsets);
+    //System.out.println("DEBUG: span to offsets: "+spanToOffsets);
     for(int i=0;i<spanFromOffsets.size();i++) {
-      long fromOffset = spanFromOffsets.get(0);
-      long toOffset = spanFromOffsets.get(0);
+      long fromOffset = spanFromOffsets.get(i);
+      long toOffset = spanToOffsets.get(i);
       // get the terms and maybe split annotations inside that span in document order as a list 
       List<Annotation> inAnns = inputAnns.get(fromOffset, toOffset).inDocumentOrder();
       if(inAnns.size() < 2) continue; // Spans with less than 2 elements are ignored
@@ -354,7 +376,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       // a span ends in inAnns
       List<Integer> spanStarts = new ArrayList<Integer>();
       List<Integer> spanEnds = new ArrayList<Integer>();
-      if(!getSpanAnnotationType().isEmpty()) {
+      if(!getSplitAnnotationType().isEmpty()) {
         // get all the span positions in the inAnns list
         boolean inSpan = false;
         int j = 0;
@@ -377,6 +399,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         spanStarts.add(0);
         spanEnds.add(inAnns.size()-1);
       }
+      //System.out.println("DEBUG: splitspans from offsets: "+spanFromOffsets);
+      //System.out.println("DEBUG: splitspans to offsets: "+spanFromOffsets);
+      
       
       // Now we have the actual spans described as the index ranges in spanStarts and spanEnds,
       // so iterate over those
@@ -398,6 +423,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         }
         // now iterate the sliding window as often inside the span as possible
         int nrWindows = spanLength-workingSlWSize;
+        //System.out.println("DEBUG: nrWindows: "+nrWindows);
         for(int k=0; k<=nrWindows; k++) {
           // count the context
           contexts += 1;
@@ -412,41 +438,61 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           for(int m=0; m<workingSlWSize; m++) {
             Annotation termAnn = inAnns.get(fromIndex+k+m);
             String term = getStringForAnn(termAnn);
+            System.out.println("DEBUG: context from="+fromOffset+" to="+toOffset+" fromindex="+fromIndex+" k="+k+" m="+m+" toindex="+toIndex+" workingSize="+workingSlWSize+" term="+term);
             termsForContext.add(term);
+            System.out.print("DEBUG: Pairs=");
             for(int n=m+1; n<workingSlWSize; n++) {
               Annotation termAnn2 = inAnns.get(fromIndex+k+n);
               String term2 = getStringForAnn(termAnn2);
               if(term.compareTo(term2) < 0) {
-                pairsForContext.add(term+"|"+term2);
+                System.out.print(term+"|"+term2+" ");
+                pairsForContext.add(term+"\t"+term2);
+              } else if(term.compareTo(term2) > 0) {
+                System.out.print(term2+"|"+term+" ");
+                pairsForContext.add(term2+"\t"+term);
               } else {
-                pairsForContext.add(term2+"|"+term);
-              }
+                // if they are equal we do not add a pair
+                // We could but then we would need to find out how to calculate
+                // the counts for chi2 properly since inclusion/exclusion only
+                // works for different terms in the pair
+              }              
             } // inner for for term2
+            System.err.println();
           } // outer for loop for term1
           // Now we have got the unique terms and pairs occuring in the context
           // count them
-          for(String term : termsForContext) {
-            // TODO: call method for addint to termCount
+          System.out.println("DEBUG: terms for context: "+termsForContext);
+          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          
+          for(String t4c : termsForContext) {
+            incrementHashMapInteger(termcounts,t4c,1);
           }
-          for(String pair : pairsForContext) {
-            // TODO: call method for adding pairCount
+          for(String p4c : pairsForContext) {
+            incrementHashMapInteger(paircounts,p4c,1);
           }
-        }
+          
+        } // iterate over the actual contexts inside a span
         
-      }
+      } // iterate over the spans
+
+      // Now add all the collected values to the global counter variables
+      
       
     }
-    
 
-    // TODO!!!now add the locally counted term frequencies to the global map
-    // also add the weighted/normalized term frequencies
-    //for (String key : wordcounts.keySet()) {
-      /* !!!
-      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementTfBy(wordcounts.get(key));
-      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(((double) wordcounts.get(key)) / ((double) documentWordFreq));
-      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(((double) wordcounts.get(key)) / ((double) mostFrequentWordFreq));
-      */
-    //}
+      System.out.println("DEBUG: termcounts for document "+document.getName()+": "+termcounts);
+      System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
+      System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
+      
+          for(String term : termcounts.keySet()) {
+            System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
+            corpusStats.countsTerms.computeIfAbsent(term, (var -> new LongAdder())).add(termcounts.get(term));
+          }
+          for(String pair : paircounts.keySet()) {
+            System.err.println("DEBUG: add pair="+pair+" count="+paircounts.get(pair));
+            corpusStats.countsPairs.computeIfAbsent(pair, (var -> new LongAdder())).add(paircounts.get(pair));
+          }
+          corpusStats.totalContexts.add(contexts);
 
     corpusStats.nDocs.add(1);
     benchmarkCheckpoint(startTime, "__CollocationsProcess");
@@ -461,6 +507,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   protected void beforeFirstDocument(Controller ctrl) {
     // !!! TODO: more checking of parameters and make sure they return a proper
     // canonical default value!
+    
+    
     // if reference null, create the global map
     synchronized (syncObject) {
       corpusStats = (CorpusStatsCollocationsData)sharedData.get("corpusStats");
@@ -469,9 +517,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       } else {
         System.err.println("INFO: creating corpusStats in duplicate " + duplicateId + " of PR " + this.getName());
         corpusStats = new CorpusStatsCollocationsData();
-        //!!!corpusStats.map = new ConcurrentHashMap<String, TermStats>(1024 * 1024, 32, 32);
         corpusStats.nDocs = new LongAdder();
-        //!!!corpusStats.nWords = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();
         corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
         sharedData.put("corpusStats", corpusStats);

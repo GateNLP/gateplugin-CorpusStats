@@ -46,13 +46,15 @@ public class CorpusStatsCollocationsData implements Serializable {
   // the value of each metric should be for this. Maybe add this to the sum file if it depends on 
   // the number of pairs, contexts etc.!!!!
   
-  public ConcurrentHashMap<String, LongAdder> countsTerms; // used to estimate p(t)
-  public ConcurrentHashMap<String, LongAdder> countsPairs; // used to estimate p(t1,t2)
+  public ConcurrentHashMap<String, LongAdder> countsTerms =
+          new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t)
+  public ConcurrentHashMap<String, LongAdder> countsPairs =
+          new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t1,t2)
   // total number of single term occurrences, used to estimate p(t) 
-  public LongAdder totalContexts; 
+  public LongAdder totalContexts = new LongAdder();
   
   // We do not need this but still good to know the number of documents
-  public LongAdder nDocs;
+  public LongAdder nDocs = new LongAdder();
   
   public boolean isCaseSensitive = true;
   public Locale ccLocale = new Locale("en");
@@ -107,6 +109,10 @@ public class CorpusStatsCollocationsData implements Serializable {
   double LOG2 = Math.log(2.0);
   private double _log2(long value) {
     if(value == 0L) return 0.0;
+    return Math.log((double)value)/LOG2;
+  }
+  private double _log2(double value) {
+    if(value == 0.0) return 0.0;
     return Math.log(value)/LOG2;
   }
   
@@ -153,18 +159,28 @@ public class CorpusStatsCollocationsData implements Serializable {
             // npmi 
             // chi2_p = p-value of the chi-squared statistic
             // student_t_p - p-value of the student t value
-            pw.println("term1\tterm2\tfreq\tprob\tpmi\tnpmi\tchi2_p\tstudent_t_p");
+            pw.println("term1\tterm2\tfreqp\tfreqt0\tfreqt1\tprob\tpmi\tnpmi\tchi2\tchi2_p\tstudent_t\tstudent_t_p");
             long N = totalContexts.sum();
+            double Nfloat = (double)N;
             
-            TDistribution tdist = new TDistribution(N-1);
+            TDistribution tdist = null;
+            if(N>1) 
+              tdist = new TDistribution(Nfloat-1.0);
+            else {
+              System.err.println("WARNING: only one context, cannot calculate student-t p-value, setting to 0");
+            }
             ChiSquaredDistribution chdist = new ChiSquaredDistribution(1);
             
             int lines = 0;
             for (String key : countsPairs.keySet()) {
-              String[] terms = key.split("\t");
+              String[] terms = key.split("\\t");
+              // System.out.println("DEBUG: retrieve counts for pair "+key+"t0="+terms[0]+" t1="+terms[1]);              
               long pairCount = countsPairs.get(key).sum();
               long term0Count = countsTerms.get(terms[0]).sum();
               long term1Count = countsTerms.get(terms[1]).sum();
+              // probability of the pair a,b is the number of contexts it appears in
+              // divided by the total number of contexts
+              double p_a_b = (float)pairCount / Nfloat;
               
               // TODO: skip this if we do not have a pair where the minimum
               // frequency of both terms is satisfied!
@@ -173,30 +189,35 @@ public class CorpusStatsCollocationsData implements Serializable {
               double pmi = _log2(pairCount) + _log2(N) - _log2(term0Count) - _log2(term1Count);
               
               // 2) calculate normalized PMI
-              double npmi = pmi / -_log2(pairCount);
+              // if pairCount is 1 then log of paircount is 0 so we would get -Inf or +inf
+              // here. Instead, we set this to 0.0 
+              double npmi = 0.0;
+              if(pairCount == 1L) {
+                npmi = -1.0;
+              } else {
+                npmi = pmi / -_log2(p_a_b);
+              }
               
               // 3) person's chi-squared 
               
-              // probability of the pair a,b is the number of contexts it appears in
-              // divided by the total number of contexts
-              double p_a_b = pairCount / N;
               // prob of b occuring in a context that does not have a is number of 
               // times b occurs minus the times b occurs with a, then divided by ...
-              double p_na_b = (term1Count - pairCount) / N;
+              double p_na_b = (term1Count - pairCount) / Nfloat;
               // mirror image for a where b does not occur
-              double p_a_nb = (term0Count - pairCount) / N;
+              double p_a_nb = (term0Count - pairCount) / Nfloat;
               // neither a nor b: total contexts minus where a occurs, minus where
               // be occurs plus the ones where a and b occur together 
-              double p_na_nb = (N - term0Count - term1Count + pairCount) / N;
-              
+              double p_na_nb = (Nfloat - term0Count - term1Count + pairCount) / Nfloat;
+              System.err.println("DEBUG: pair="+key+", N="+Nfloat+", t0c="+term0Count+", t1c="+term1Count+", pairc="+pairCount);
+              System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb="+p_a_b+","+p_na_b+","+p_a_nb+","+p_na_nb);
               // Expected values for all 4 combinations, calculated from the margins
-              double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
-              double e_na_b = (p_na_b + p_na_nb) * (p_na_b + p_a_b);
-              double e_a_nb = (p_a_nb + p_a_b) * (p_a_nb + p_na_nb);
-              double e_na_nb = (p_na_nb + p_na_b) * (p_na_nb + p_a_nb);
+              //double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
+              //double e_na_b = (p_na_b + p_na_nb) * (p_na_b + p_a_b);
+              //double e_a_nb = (p_a_nb + p_a_b) * (p_a_nb + p_na_nb);
+              //double e_na_nb = (p_na_nb + p_na_b) * (p_na_nb + p_a_nb);
               
               double tmp = (p_a_b * p_na_nb - p_a_nb * p_na_b);
-              tmp = N * tmp * tmp;
+              tmp = Nfloat * tmp * tmp;
               double chi2 = tmp / 
                       ((p_a_b + p_a_nb) * (p_a_b + p_na_b) * (p_a_nb + p_na_nb) * (p_na_b + p_na_nb));
               
@@ -204,9 +225,9 @@ public class CorpusStatsCollocationsData implements Serializable {
               
               // 4) calculate student t p-value
               
-              double pab = (term0Count/N) * (term1Count/N);  // expected p if indep
+              double pab = (term0Count/Nfloat) * (term1Count/Nfloat);  // expected p if indep
               double samplevariance = p_a_b * (1.0 - p_a_b);
-              double student_t = (p_a_b - pab)/ Math.sqrt(samplevariance/N);
+              double student_t = (p_a_b - pab)/ Math.sqrt(samplevariance/Nfloat);
               
               double student_t_p = tdist.cumulativeProbability(student_t);
               
@@ -235,9 +256,14 @@ public class CorpusStatsCollocationsData implements Serializable {
               pw.print("\t");
               pw.print(npmi);
               pw.print("\t");
+              pw.print(chi2);
+              pw.print("\t");
               pw.print(chi2_p);
               pw.print("\t");
+              pw.print(student_t);
+              pw.print("\t");
               pw.print(student_t_p);
+              pw.println();
             }
             System.err.println("Term stats rows written to file, lines: " + lines);
           } catch (Exception ex) {
