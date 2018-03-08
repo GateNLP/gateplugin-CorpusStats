@@ -26,10 +26,12 @@
   <property name="gate.jar" location="${gate.home}/bin/gate.jar" />
 
   <!-- Source directory - contains the Java source files for this plugin -->
-  <property name="src.dir" location="src" />
+  <property name="src.dir" location="src/main/java" />
+  <property name="src-test.dir" location="src/test/java" />
 
   <!-- directory to contain the compiled classes -->
   <property name="classes.dir" location="classes" />
+  <property name="classes-test.dir" location="classes/test" />
 
   <!-- documentation directory -->
   <property name="doc.dir" location="doc" />
@@ -45,29 +47,49 @@
   <!-- location for the generated JAR file -->
   <property name="jar.location" location="${plugin.name}.jar" />
 
-
-
-  <!-- Classpath to compile - includes gate.jar, GATE/lib/*.jar and any local
-       library JAR files. -->
-  <path id="compile.classpath">
+  <path id="gate.classpath">
     <pathelement location="${gate.jar}" />
     <fileset dir="${gate.lib}">
       <include name="**/*.jar" />
       <include name="**/*.zip" />
     </fileset>
+  </path>
+
+
+  <!-- Classpath to compile - includes gate.jar, GATE/lib/*.jar and any local
+       library JAR files. -->
+  <path id="compile.classpath">
+    <path refid="gate.classpath" />
     <fileset dir="${lib.dir}" includes="**/*.jar" /> 
   </path>
+
+  <path id="compile-test.classpath">
+    <path refid="compile.classpath" />
+    <pathelement location="${jar.location}" />
+  </path>
+ 
+  <path id="test.classpath">
+    <path refid="compile.classpath" />
+    <pathelement location="${jar.location}" />
+    <dirset dir="${classes-test.dir}">
+    </dirset>
+  </path>
+
+
   
   <!--====================== Targets ============================-->
   
   <!-- create build directory structure -->
   <target name="prepare">
-    <mkdir dir="${classes.dir}" />
+    <mkdir dir="classes"/>
+    <mkdir dir="classes/main"/>
+    <mkdir dir="classes/test"/>
   </target>
 
   <!-- compile the source -->
   <target name="compile" depends="prepare">
     <javac classpathref="compile.classpath"
+           deprecation="true"
            srcdir="${src.dir}"
            destdir="${classes.dir}"
            debug="true"
@@ -76,6 +98,35 @@
            source="1.8"
            target="1.8" />
   </target>
+
+  <!-- compile the tests source -->
+  <target name="compile-test" depends="jar">
+    <javac classpathref="compile-test.classpath"
+           srcdir="${src-test.dir}"
+           destdir="${classes-test.dir}"
+           deprecation="true"
+           debug="true"
+           debuglevel="lines,source"
+           source="1.8" 
+           target="1.8">
+       <compilerarg value="-Xlint:unchecked"/>
+     </javac>
+  </target>
+
+  <target name="test" depends="compile-test">
+    <junit fork="true">
+      <classpath refid="test.classpath" />
+      <formatter type="brief" usefile="false" />
+      <formatter type="brief" usefile="true" />
+      <formatter type="xml" />
+      <test name="gate.plugin.corpusstats.tests.SuiteAllTests" />
+    </junit>
+    <delete file="info.yaml"/>
+    <delete file="lf.model"/>
+    <delete file="pipe.pipe"/>
+  </target>
+
+
 
   <!-- copy resources (anything non-.java) from src to classes -->
   <target name="copy.resources" depends="prepare">
@@ -146,7 +197,6 @@
                          distribution
   -->
   <target name="build" depends="jar" />
-  <target name="test" />
   <target name="distro.prepare" depends="clean.classes, clean.tests" />
 
 </project>

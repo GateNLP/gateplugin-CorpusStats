@@ -62,18 +62,32 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return inputASName;
   }
 
-  protected String inputType = "";
+  protected String inputType1 = "";
 
   @RunTime
   @CreoleParameter(
-          comment = "The input annotation type",
+          comment = "The input annotation type of the first or both terms in a pair",
           defaultValue = "Token")
-  public void setInputAnnotationType(String val) {
-    this.inputType = val;
+  public void setInputAnnotationType1(String val) {
+    this.inputType1 = val;
   }
 
-  public String getInputAnnotationType() {
-    return inputType;
+  public String getInputAnnotationType1() {
+    return inputType1;
+  }
+  
+  protected String inputType2 = "";
+  
+  @RunTime
+  @CreoleParameter(
+          comment = "The input annotation type of the first or both terms in a pair",
+          defaultValue = "Token")
+  public void setInputAnnotationType2(String val) {
+    this.inputType2 = val;
+  }
+
+  public String getInputAnnotationType2() {
+    return inputType2;
   }
 
   @RunTime
@@ -95,15 +109,31 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @CreoleParameter(
           comment = "The feature from the input annotation to use as term string, if left blank the document text",
           defaultValue = "")
-  public void setKeyFeature(String val) {
-    this.keyFeature = val;
+  public void setStringFeature1(String val) {
+    this.stringFeature1 = val;
   }
 
-  public String getKeyFeature() {
-    return keyFeature;
+  public String getStringFeature1() {
+    return stringFeature1;
   }
-  protected String keyFeature = "";
+  protected String stringFeature1 = "";
 
+  
+    @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The feature from the input annotation to use as term string, if left blank the document text",
+          defaultValue = "")
+  public void setStringFeature2(String val) {
+    this.stringFeature2 = val;
+  }
+
+  public String getStringFeature2() {
+    return stringFeature2;
+  }
+  protected String stringFeature2 = "";
+
+  
   private URL pairStatsFileUrl;
 
   @RunTime
@@ -205,24 +235,46 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return dataFileUrl;
   }
 
-  private int minTf = 1;
+  private int minContexts1 = 1;
 
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The minimum term frequency for a term to get considered",
+          comment = "The minimum contexts number for a term or term1 to get considered",
           defaultValue = "1"
   )
-  public void setMinTf(Integer value) {
+  public void setMinContexts1(Integer value) {
     if (value == null) {
-      minTf = 1;
+      minContexts1 = 1;
     } else {
-      minTf = value;
+      minContexts1 = value;
+    }
+  }
+  
+
+  public Integer getMinContexts1() {
+    return minContexts1;
+  }
+  
+
+  private int minContexts2 = -1;
+
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The minimum contexts number for a term or term1 to get considered, if -1 same as minContexts1",
+          defaultValue = "-1"
+  )
+  public void setMinContexts2(Integer value) {
+    if (value == null) {
+      minContexts2 = -1;
+    } else {
+      minContexts2 = value;
     }
   }
 
-  public Integer getMinTf() {
-    return minTf;
+  public Integer getMinContexts2() {
+    return minContexts2;
   }
   
   
@@ -251,9 +303,80 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return reuseExisting;
   }
           
+  private URL tfFileUrl;
+
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The URL of where to store the data in binary compressed format, not used if left empty"
+  )
+  public void setTfFileUrl(URL u) {
+    tfFileUrl = u;
+  }
+
+  public URL getTfFileUrl() {
+    return tfFileUrl;
+  }
+
           
-          
+  private double minTf = 1;
+
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The minimum 'tf' from the tf-file necessary for the term1 or both terms to get considered",
+          defaultValue = "0.0"
+  )
+  public void setMinTf(Double value) {
+    if (value == null) {
+      minTf = 0.0;
+    } else {
+      minTf = value;
+    }
+  }
+
+  public Double getMinTf() {
+    return minTf;
+  }
   
+  
+  private double laplaceCoefficient = 0.0;
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "Coefficient used for laplacian smoothing",
+          defaultValue = "0.0"
+  )
+  public void setLaplaceCoefficient(Double value) {
+    if (value == null) {
+      laplaceCoefficient = 0.0;
+    } else {
+      laplaceCoefficient = value;
+    }
+  }
+
+  public Double getLaplaceCoefficient() {
+    return laplaceCoefficient;
+  }
+  
+  private double dampeningCoefficient = 1.0;
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "Coefficient used for dampening the term2 probability estimates. If 1.0, not used",
+          defaultValue = "1.0"
+  )
+  public void setDampeningCoefficient(Double value) {
+    if (value == null) {
+      dampeningCoefficient = 0.0;
+    } else {
+      dampeningCoefficient = value;
+    }
+  }
+
+  public Double getDampeningCoefficient() {
+    return laplaceCoefficient;
+  }
   
 
   ////////////////////// FIELDS
@@ -271,10 +394,10 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   // and correctly case-folded
   private String getStringForAnn(Annotation ann) {
     String str = null;
-    if(getKeyFeature()==null || getKeyFeature().isEmpty()) {
+    if(getStringFeature1()==null || getStringFeature1().isEmpty()) {
       str = gate.Utils.cleanStringFor(document, ann);
     } else {
-      str = (String)ann.getFeatures().get(getKeyFeature());
+      str = (String)ann.getFeatures().get(getStringFeature1());
     }
     if(str==null) str="";
     if(!getCaseSensitive()) {
@@ -309,12 +432,12 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
     AnnotationSet inputAnns = null;
     // TODO: BEGIN move to run init code
-    if (inputType == null || inputType.isEmpty()) {
+    if (inputType1 == null || inputType1.isEmpty()) {
       throw new GateRuntimeException("Input annotation type must not be empty!");
     }
     // if we have a split annotation type defined, we also need to find those    
     HashSet<String> inputTypes = new HashSet<String>();
-    inputTypes.add(inputType);    
+    inputTypes.add(inputType1);    
     if(getSplitAnnotationType() != null && !getSplitAnnotationType().isEmpty()) {
       inputTypes.add(getSplitAnnotationType());
     }
@@ -381,7 +504,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         boolean inSpan = false;
         int j = 0;
         for(Annotation inAnn : inAnns) {
-          if(!inSpan && inAnn.getType().equals(inputType)) {
+          if(!inSpan && inAnn.getType().equals(inputType1)) {
             spanStarts.add(j);
             inSpan = true;
           } else if(inSpan && inAnn.getType().equals(splitAnnotationType)) {
@@ -541,7 +664,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       // TODO: we had this here, but why do we need it?
       corpusStats = (CorpusStatsCollocationsData) sharedData.get("corpusStats");
       if (corpusStats != null) {
-        corpusStats.save(dataFileUrl, sumsFileUrl, pairStatsFileUrl, getMinTf());
+        corpusStats.save(dataFileUrl, sumsFileUrl, pairStatsFileUrl, getMinContexts1());
         // After each run, we clean up, so that the code before each run can 
         // recreate or reload the data as if it was the first time
         //!!!corpusStats.map = null;

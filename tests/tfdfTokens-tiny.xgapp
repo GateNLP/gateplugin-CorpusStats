@@ -472,7 +472,7 @@
                   <string></string>
                 </entry>
                 <entry>
-                  <string>keyFeature</string>
+                  <string>stringFeature1</string>
                   <string></string>
                 </entry>
                 <entry>
@@ -492,11 +492,11 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
-                  <string>inputAnnotationType</string>
+                  <string>inputAnnotationType1</string>
                   <string>WordToken</string>
                 </entry>
                 <entry>
-                  <string>minTf</string>
+                  <string>minContexts1</string>
                   <int>1</int>
                 </entry>
                 <entry>
