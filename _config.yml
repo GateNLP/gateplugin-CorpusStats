@@ -1,1 +1,14 @@
 theme: jekyll-theme-cayman
+
+sitebase: /gateplugin-CorpusStats
+
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
+
+comments: true
+
+
+plugins:
+- jemoji      
+
