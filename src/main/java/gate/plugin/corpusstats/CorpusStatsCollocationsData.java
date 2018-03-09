@@ -165,6 +165,8 @@ public class CorpusStatsCollocationsData implements Serializable {
     // probability of the pair a,b is the number of contexts it appears in
     // divided by the total number of contexts
     ret.p_a_b = (float) ret.pairCount / Nfloat;
+    ret.p_a = (float) ret.term1Count / Nfloat;
+    ret.p_b = (float) ret.term2Count / Nfloat;
 
     // TODO: skip this if we do not have a pair where the minimum
     // frequency of both terms is satisfied!
@@ -180,6 +182,7 @@ public class CorpusStatsCollocationsData implements Serializable {
     } else {
       ret.npmi = ret.pmi / -_log2(ret.p_a_b);
     }
+    ret.wpmi = ret.p_a_b * ret.pmi;
 
     // 3) person's chi-squared 
     // prob of b occuring in a context that does not have a is number of 
@@ -190,8 +193,8 @@ public class CorpusStatsCollocationsData implements Serializable {
     // neither a nor b: total contexts minus where a occurs, minus where
     // be occurs plus the ones where a and b occur together 
     ret.p_na_nb = (Nfloat - ret.term1Count - ret.term2Count + ret.pairCount) / Nfloat;
-    System.err.println("DEBUG: pair=" + pair + ", N=" + Nfloat + ", t0c=" + ret.term1Count + ", t1c=" + ret.term2Count + ", pairc=" + ret.pairCount);
-    System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb=" + ret.p_a_b + "," + ret.p_na_b + "," + ret.p_a_nb + "," + ret.p_na_nb);
+    //System.err.println("DEBUG: pair=" + pair + ", N=" + Nfloat + ", t0c=" + ret.term1Count + ", t1c=" + ret.term2Count + ", pairc=" + ret.pairCount);
+    //System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb=" + ret.p_a_b + "," + ret.p_na_b + "," + ret.p_a_nb + "," + ret.p_na_nb);
     // Expected values for all 4 combinations, calculated from the margins
     //double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
     //double e_na_b = (p_na_b + p_na_nb) * (p_na_b + p_a_b);
