@@ -144,25 +144,6 @@ public class CorpusStatsCollocationsData implements Serializable {
     }
   }
 
-  /**
-   * A container for all the pair-related statistics we calculate
-   */
-  static class PairStats {
-    public long pairCount;
-    public long term1Count;
-    public long term2Count;
-    public double p_a_b;
-    public double p_na_b;
-    public double p_a_nb;
-    public double p_na_nb;
-    public double p_a_b_expected; 
-    public double pmi;
-    public double npmi;
-    public double chi2;
-    public double chi2_p;
-    public double student_t;
-    public double student_t_p;
-  }
 
   /**
    * (Re-)calculate the statistics for some pair of terms and return them as an
@@ -246,8 +227,9 @@ public class CorpusStatsCollocationsData implements Serializable {
         // n_terms = number of different terms
         // n_pairs = number of different pairs encountered
         // TODO: add scores for PMI, npmi, chi2_p etc. for pairs not found in the corpus!
-        pw.println("ncontexts\tnterms\tnpairs");
-        pw.println(totalContexts + "\t" + countsTerms.size() + "\t" + countsPairs.size());
+        // TODO: once we support two types, always add the stats for both!
+        pw.println("ncontexts\tnterms\tnpairs\ndocs");
+        pw.println(totalContexts + "\t" + countsTerms.size() + "\t" + countsPairs.size() + "\t" + nDocs.sum());
         System.err.println("Number of contexts: " + totalContexts);
         System.err.println("Number of different terms: " + countsTerms.size());
         System.err.println("Number of different pairs: " + countsPairs.size());
@@ -269,86 +251,18 @@ public class CorpusStatsCollocationsData implements Serializable {
         // term1 - first term of pair (lexically smaller) 
         // term2 - second term of pair (lexically larger or equal) 
         // freq_pair = number of contexts the pair occurs in
-        // freq_term1 = 
-        // frequ_term2
+        // freqt1 = 
+        // freqt2
         // prob = estimated probability to find the pair in context
         // pmi = log2(p(x,y) / p(x)p(y))
         // npmi 
         // chi2_p = p-value of the chi-squared statistic
         // student_t_p - p-value of the student t value
-        pw.println("term1\tterm2\tfreqp\tfreqt0\tfreqt1\tprob\tpmi\tnpmi\tchi2\tchi2_p\tstudent_t\tstudent_t_p");
+        pw.println("term1\tterm2\tfreqp\tfreqt1\tfreqt2\tprob\tprobexp\tpmi\tnpmi\tchi2\tchi2_p\tstudent_t\tstudent_t_p");
         
-        /*
-        long N = totalContexts.sum();
-        double Nfloat = (double) N;
-
-        TDistribution tdist = null;
-        if (N > 1) {
-          tdist = new TDistribution(Nfloat - 1.0);
-        } else {
-          System.err.println("WARNING: only one context, cannot calculate student-t p-value, setting to 0");
-        }
-        ChiSquaredDistribution chdist = new ChiSquaredDistribution(1);
-        */
         int lines = 0;
         for (String key : countsPairs.keySet()) {
           PairStats stats = calcStats(key);
-          /*
-          String[] terms = key.split("\\t");
-          // System.out.println("DEBUG: retrieve counts for pair "+key+"t0="+terms[0]+" t1="+terms[1]);              
-          long pairCount = countsPairs.get(key).sum();
-          long term0Count = countsTerms.get(terms[0]).sum();
-          long term1Count = countsTerms.get(terms[1]).sum();
-          // probability of the pair a,b is the number of contexts it appears in
-          // divided by the total number of contexts
-          double p_a_b = (float) pairCount / Nfloat;
-
-          // TODO: skip this if we do not have a pair where the minimum
-          // frequency of both terms is satisfied!
-          // 1) calculate ordinary PMI
-          double pmi = _log2(pairCount) + _log2(N) - _log2(term0Count) - _log2(term1Count);
-
-          // 2) calculate normalized PMI
-          // if pairCount is 1 then log of paircount is 0 so we would get -Inf or +inf
-          // here. Instead, we set this to 0.0 
-          double npmi = 0.0;
-          if (pairCount == 1L) {
-            npmi = -1.0;
-          } else {
-            npmi = pmi / -_log2(p_a_b);
-          }
-
-          // 3) person's chi-squared 
-          // prob of b occuring in a context that does not have a is number of 
-          // times b occurs minus the times b occurs with a, then divided by ...
-          double p_na_b = (term1Count - pairCount) / Nfloat;
-          // mirror image for a where b does not occur
-          double p_a_nb = (term0Count - pairCount) / Nfloat;
-          // neither a nor b: total contexts minus where a occurs, minus where
-          // be occurs plus the ones where a and b occur together 
-          double p_na_nb = (Nfloat - term0Count - term1Count + pairCount) / Nfloat;
-          System.err.println("DEBUG: pair=" + key + ", N=" + Nfloat + ", t0c=" + term0Count + ", t1c=" + term1Count + ", pairc=" + pairCount);
-          System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb=" + p_a_b + "," + p_na_b + "," + p_a_nb + "," + p_na_nb);
-          // Expected values for all 4 combinations, calculated from the margins
-          //double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
-          //double e_na_b = (p_na_b + p_na_nb) * (p_na_b + p_a_b);
-          //double e_a_nb = (p_a_nb + p_a_b) * (p_a_nb + p_na_nb);
-          //double e_na_nb = (p_na_nb + p_na_b) * (p_na_nb + p_a_nb);
-
-          double tmp = (p_a_b * p_na_nb - p_a_nb * p_na_b);
-          tmp = Nfloat * tmp * tmp;
-          double chi2 = tmp
-                  / ((p_a_b + p_a_nb) * (p_a_b + p_na_b) * (p_a_nb + p_na_nb) * (p_na_b + p_na_nb));
-
-          double chi2_p = chdist.cumulativeProbability(chi2);
-
-          // 4) calculate student t p-value
-          double pab = (term0Count / Nfloat) * (term1Count / Nfloat);  // expected p if indep
-          double samplevariance = p_a_b * (1.0 - p_a_b);
-          double student_t = (p_a_b - pab) / Math.sqrt(samplevariance / Nfloat);
-
-          double student_t_p = tdist.cumulativeProbability(student_t);
-          */
           lines++;
           // term1 - first term of pair (lexically smaller) 
           // term2 - second term of pair (lexically larger or equal) 
@@ -369,6 +283,8 @@ public class CorpusStatsCollocationsData implements Serializable {
           pw.print(stats.term2Count);
           pw.print("\t");
           pw.print(stats.p_a_b);
+          pw.print("\t");
+          pw.print(stats.p_a_b_expected);
           pw.print("\t");
           pw.print(stats.pmi);
           pw.print("\t");
