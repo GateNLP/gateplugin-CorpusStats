@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 @CreoleResource(name = "CorpusStatsCollocationsPR",
@@ -96,13 +95,13 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           comment = "Annotation which indicates span within which the collocation is counted. If missing, whole document.",
           defaultValue = "")
   public void setSpanAnnotationType(String val) {
-    this.spanType = val;
+    this.spanAnnotationType = val;
   }
 
   public String getSpanAnnotationType() {
-    return spanType;
+    return spanAnnotationType;
   }
-  protected String spanType = "";
+  protected String spanAnnotationType = "";
 
   @RunTime
   @Optional
@@ -235,7 +234,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return dataFileUrl;
   }
 
-  private int minContexts1 = 1;
+  private int minContextsT1 = 1;
 
   @RunTime
   @Optional
@@ -243,21 +242,21 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           comment = "The minimum contexts number for a term or term1 to get considered",
           defaultValue = "1"
   )
-  public void setMinContexts1(Integer value) {
+  public void setMinContextsT1(Integer value) {
     if (value == null) {
-      minContexts1 = 1;
+      minContextsT1 = 1;
     } else {
-      minContexts1 = value;
+      minContextsT1 = value;
     }
   }
   
 
-  public Integer getMinContexts1() {
-    return minContexts1;
+  public Integer getMinContextsT1() {
+    return minContextsT1;
   }
   
 
-  private int minContexts2 = -1;
+  private int minContextsT2 = -1;
 
   @RunTime
   @Optional
@@ -265,16 +264,36 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           comment = "The minimum contexts number for a term or term1 to get considered, if -1 same as minContexts1",
           defaultValue = "-1"
   )
-  public void setMinContexts2(Integer value) {
+  public void setMinContextsT2(Integer value) {
     if (value == null) {
-      minContexts2 = -1;
+      minContextsT2 = -1;
     } else {
-      minContexts2 = value;
+      minContextsT2 = value;
     }
   }
 
-  public Integer getMinContexts2() {
-    return minContexts2;
+  public Integer getMinContextsT2() {
+    return minContextsT2;
+  }
+  
+  private int minContextsP = 1;
+
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "The minimum contexts number for a pair to occur in",
+          defaultValue = "-1"
+  )
+  public void setMinContextsP(Integer value) {
+    if (value == null) {
+      minContextsP = 1;
+    } else {
+      minContextsP = value;
+    }
+  }
+
+  public Integer getMinContextsP() {
+    return minContextsP;
   }
   
   
@@ -419,7 +438,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @Override
   protected Document process(Document document) {
 
-    System.out.println("!!! DEBUG: processing document "+document.getName());
+    //System.out.println("!!! DEBUG: processing document "+document.getName());
     fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
     
     AnnotationSet inputAS = null;
@@ -446,10 +465,10 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     inputAnns = inputAS.get(inputTypes);
 
     AnnotationSet containingAnns = null;
-    if (spanType == null || spanType.isEmpty()) {
+    if (spanAnnotationType == null || spanAnnotationType.isEmpty()) {
       // leave the containingAnns null to indicate we do not use containing annotations
     } else {
-      containingAnns = inputAS.get(spanType);
+      containingAnns = inputAS.get(spanAnnotationType);
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
@@ -493,6 +512,40 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       // get the terms and maybe split annotations inside that span in document order as a list 
       List<Annotation> inAnns = inputAnns.get(fromOffset, toOffset).inDocumentOrder();
       if(inAnns.size() < 2) continue; // Spans with less than 2 elements are ignored
+      // pre-calculate the strings we want to use: we create two lists of       
+      // strings containing the strings for the first and second type 
+      // but if we just have one type, a single list gets shared.
+      // we also use a list of integers 1 or 2 or 0 for split to indicate which type 
+      // we found at that location
+      List<String> strings1 = new ArrayList<String>();
+      List<String> strings2 = null;
+      List<Integer> anntypes = new ArrayList<Integer>();
+      if(inputType1.equals(inputType2)) {
+        strings2 = strings1;
+      } else {
+        strings2 = new ArrayList<String>();        
+      }
+      for (Annotation ann : inAnns) {
+        if (ann.getType().equals(inputType1)) {
+          // If we have two types we need to add an empty element to strings2
+          if(strings1 != strings2) strings2.add("");
+          strings1.add(getStringForAnn(ann));
+          anntypes.add(1);
+        } else if(ann.getType().equals(inputType2)) {
+          // we only get into the else if we actual have two types because otherwise
+          // we would have gone into the then! So
+          // we have to separate string tables
+          // TODO: may want to use different case/language settings for type 2
+          strings1.add("");
+          strings2.add(getStringForAnn(ann));
+          anntypes.add(2);
+        } else {
+          strings1.add("");
+          anntypes.add(0);
+        }
+      }
+      
+      
       // now do the whole processing for each section split up by the split annotations
       // however we only need to check if we actually have a span annotation type
       // The following lists contain the indices of where a span starts to where
@@ -503,11 +556,14 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         // get all the span positions in the inAnns list
         boolean inSpan = false;
         int j = 0;
-        for(Annotation inAnn : inAnns) {
-          if(!inSpan && inAnn.getType().equals(inputType1)) {
+        //for(Annotation inAnn : inAnns) {
+        for(int anntype : anntypes) {
+          //if(!inSpan && inAnn.getType().equals(inputType1)) {
+          if(!inSpan && anntype != 0) {
             spanStarts.add(j);
             inSpan = true;
-          } else if(inSpan && inAnn.getType().equals(splitAnnotationType)) {
+          //} else if(inSpan && inAnn.getType().equals(splitAnnotationType)) {
+          } else if(inSpan && anntype == 0) {
             spanEnds.add(j-1);
             inSpan = false;
           }
@@ -558,20 +614,29 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           // TODO: not sure what the fastest way to do this could be!
           termsForContext.clear();
           pairsForContext.clear();
+          
+          // TODO!! Continue: iterate over strings1 outer and strings2 inner
+          // and only take if they match their type! An empty element 
+          // in strings1 or strings2 indiciates that this element is not 
+          // of type1 or type2 respectively. 
+          // TODO!!! THINK! We may need two loops here depending on 
+          // If we have one or two types: if we have one, we can do 
+          // the limited looping, otherwise we need both loops to
+          // go over the whole range?????
           for(int m=0; m<workingSlWSize; m++) {
             Annotation termAnn = inAnns.get(fromIndex+k+m);
             String term = getStringForAnn(termAnn);
-            System.out.println("DEBUG: context from="+fromOffset+" to="+toOffset+" fromindex="+fromIndex+" k="+k+" m="+m+" toindex="+toIndex+" workingSize="+workingSlWSize+" term="+term);
+            //System.out.println("DEBUG: context from="+fromOffset+" to="+toOffset+" fromindex="+fromIndex+" k="+k+" m="+m+" toindex="+toIndex+" workingSize="+workingSlWSize+" term="+term);
             termsForContext.add(term);
-            System.out.print("DEBUG: Pairs=");
+            //System.out.print("DEBUG: Pairs=");
             for(int n=m+1; n<workingSlWSize; n++) {
               Annotation termAnn2 = inAnns.get(fromIndex+k+n);
               String term2 = getStringForAnn(termAnn2);
               if(term.compareTo(term2) < 0) {
-                System.out.print(term+"|"+term2+" ");
+                //System.out.print(term+"|"+term2+" ");
                 pairsForContext.add(term+"\t"+term2);
               } else if(term.compareTo(term2) > 0) {
-                System.out.print(term2+"|"+term+" ");
+                //System.out.print(term2+"|"+term+" ");
                 pairsForContext.add(term2+"\t"+term);
               } else {
                 // if they are equal we do not add a pair
@@ -580,12 +645,12 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
                 // works for different terms in the pair
               }              
             } // inner for for term2
-            System.err.println();
+            //System.err.println();
           } // outer for loop for term1
           // Now we have got the unique terms and pairs occuring in the context
           // count them
-          System.out.println("DEBUG: terms for context: "+termsForContext);
-          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          //System.out.println("DEBUG: terms for context: "+termsForContext);
+          //System.out.println("DEBUG: pairs for context: "+pairsForContext);
           
           for(String t4c : termsForContext) {
             incrementHashMapInteger(termcounts,t4c,1);
@@ -603,16 +668,16 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       
     }
 
-      System.out.println("DEBUG: termcounts for document "+document.getName()+": "+termcounts);
-      System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
-      System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
+      //System.out.println("DEBUG: termcounts for document "+document.getName()+": "+termcounts);
+      //System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
+      //System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
       
           for(String term : termcounts.keySet()) {
-            System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
+            //System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
             corpusStats.countsTerms.computeIfAbsent(term, (var -> new LongAdder())).add(termcounts.get(term));
           }
           for(String pair : paircounts.keySet()) {
-            System.err.println("DEBUG: add pair="+pair+" count="+paircounts.get(pair));
+            //System.err.println("DEBUG: add pair="+pair+" count="+paircounts.get(pair));
             corpusStats.countsPairs.computeIfAbsent(pair, (var -> new LongAdder())).add(paircounts.get(pair));
           }
           corpusStats.totalContexts.add(contexts);
@@ -628,9 +693,22 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
-    // !!! TODO: more checking of parameters and make sure they return a proper
-    // canonical default value!
-    
+    // check parameters and adapt if necessary!
+    if(caseConversionLanguage == null || caseConversionLanguage.isEmpty()) {
+      caseConversionLanguage = "en";
+    }
+    if(spanAnnotationType == null || spanAnnotationType.isEmpty()) {
+      spanAnnotationType = "";
+    }
+    if(inputASName == null || inputASName.isEmpty()) {
+      inputASName = "";
+    }
+    if(inputType1 == null || inputType1.isEmpty()) {
+      throw new GateRuntimeException("Input Annotation type 1 is required");
+    }
+    if(inputType2 == null || inputType1.isEmpty()) {
+      inputType2 = inputType1;
+    }
     
     // if reference null, create the global map
     synchronized (syncObject) {
@@ -643,6 +721,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         corpusStats.nDocs = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();
         corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
+        corpusStats.minContexts_p = getMinContextsP();
+        corpusStats.minContexts_t1 = getMinContextsT1();
+        corpusStats.minContexts_t2 = getMinContextsT2();
         sharedData.put("corpusStats", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
@@ -664,7 +745,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       // TODO: we had this here, but why do we need it?
       corpusStats = (CorpusStatsCollocationsData) sharedData.get("corpusStats");
       if (corpusStats != null) {
-        corpusStats.save(dataFileUrl, sumsFileUrl, pairStatsFileUrl, getMinContexts1());
+        corpusStats.save(dataFileUrl, sumsFileUrl, pairStatsFileUrl, getMinContextsT1());
         // After each run, we clean up, so that the code before each run can 
         // recreate or reload the data as if it was the first time
         //!!!corpusStats.map = null;

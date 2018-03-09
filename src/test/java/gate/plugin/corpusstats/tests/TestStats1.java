@@ -45,7 +45,7 @@ public class TestStats1 {
     cs.countsTerms.computeIfAbsent("new", (var -> new LongAdder())).add(8+15820);
     cs.initStats();
     PairStats ret = cs.calcStats("companies\tnew");
-    //System.err.println("DEBUG: ex1, got stats="+ret);
+    System.err.println("DEBUG: ex1, got stats="+ret);
     
     assertEquals(1.54886, ret.chi2, 0.001);
     assertEquals(1.54886, ret.chi2, 0.001);
@@ -58,14 +58,14 @@ public class TestStats1 {
     
     // example 2: table 5.15 from Manning1999
     cs = new CorpusStatsCollocationsData();
-cs.nDocs.add(1);
+    cs.nDocs.add(1);
     cs.totalContexts.add(31950+12004+4793+848330);
     cs.countsPairs.computeIfAbsent("chambre\thouse", (var -> new LongAdder())).add(31950);
     cs.countsTerms.computeIfAbsent("chambre", (var -> new LongAdder())).add(31950+4793);
     cs.countsTerms.computeIfAbsent("house", (var -> new LongAdder())).add(31950+12004);
     cs.initStats();
     ret = cs.calcStats("chambre\thouse");
-    //System.err.println("DEBUG: ex2a, got stats="+ret);
+    System.err.println("DEBUG: ex2a, got stats="+ret);
     
     assertEquals(4.149, ret.pmi, 0.01);
     assertEquals(553609.574, ret.chi2, 1.0);
@@ -99,7 +99,7 @@ cs.nDocs.add(1);
     assertEquals(0.05, ret.p_a_b, 0.01);
     
     ret = cs.calcStats("data\tinformation");
-    // System.err.println("DEBUG: ex3a, got stats="+ret);    
+    System.err.println("DEBUG: ex3a, got stats="+ret);    
     assertEquals(0.316, ret.p_a_b, 0.001);
     assertEquals(0.579, ret.p_b, 0.001);
     assertEquals(0.368, ret.p_a, 0.001);

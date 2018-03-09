@@ -58,6 +58,10 @@ public class CorpusStatsCollocationsData implements Serializable {
 
   public boolean isCaseSensitive = true;
   public Locale ccLocale = new Locale("en");
+  
+  public long minContexts_t1 = 1;
+  public long minContexts_t2 = 1;
+  public long minContexts_p = 1;
 
   public void load(URL dataUrl, URL sumsTsvUrl, URL statsTsvUrl) {
     boolean haveLoaded = false;
@@ -152,16 +156,24 @@ public class CorpusStatsCollocationsData implements Serializable {
    * @return
    */
   public PairStats calcStats(String pair) {
+    String[] terms = pair.split("\\t");
+    long pairCount = countsPairs.get(pair).sum();
+    long term1Count = countsTerms.get(terms[0]).sum();
+    long term2Count = countsTerms.get(terms[1]).sum();
+    //System.out.println("DEBUG: retrieve counts for pair "+pair+"t0="+terms[0]+" t1="+terms[1]+
+    //        "got: "+pairCount+"/"+term1Count+"/"+term2Count);              
+    return calcStats_worker(pairCount, term1Count, term2Count);
+  }
+  
+  public PairStats calcStats_worker(long pairCount, long term1Count, long term2Count) {
 
     if (N == 0L) {
       initStats();
     }
     PairStats ret = new PairStats();
-    String[] terms = pair.split("\\t");
-    // System.out.println("DEBUG: retrieve counts for pair "+key+"t0="+terms[0]+" t1="+terms[1]);              
-    ret.pairCount = countsPairs.get(pair).sum();
-    ret.term1Count = countsTerms.get(terms[0]).sum();
-    ret.term2Count = countsTerms.get(terms[1]).sum();
+    ret.pairCount = pairCount;
+    ret.term1Count = term1Count;
+    ret.term2Count = term2Count;
     // probability of the pair a,b is the number of contexts it appears in
     // divided by the total number of contexts
     ret.p_a_b = (float) ret.pairCount / Nfloat;
@@ -265,7 +277,16 @@ public class CorpusStatsCollocationsData implements Serializable {
         
         int lines = 0;
         for (String key : countsPairs.keySet()) {
-          PairStats stats = calcStats(key);
+          String[] terms = key.split("\\t");
+          long pairCount = countsPairs.get(key).sum();
+          long term1Count = countsTerms.get(terms[0]).sum();
+          long term2Count = countsTerms.get(terms[1]).sum();
+          
+          if(pairCount < minContexts_p || term1Count < minContexts_t1 || term2Count < minContexts_t2) {
+            continue;
+          }
+          PairStats stats = calcStats_worker(pairCount,term1Count,term2Count);
+          
           lines++;
           // term1 - first term of pair (lexically smaller) 
           // term2 - second term of pair (lexically larger or equal) 
