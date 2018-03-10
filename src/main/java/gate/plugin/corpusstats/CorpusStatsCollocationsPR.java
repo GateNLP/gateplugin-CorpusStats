@@ -457,12 +457,16 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // if we have a split annotation type defined, we also need to find those    
     HashSet<String> inputTypes = new HashSet<String>();
     inputTypes.add(inputType1);    
-    if(getSplitAnnotationType() != null && !getSplitAnnotationType().isEmpty()) {
-      inputTypes.add(getSplitAnnotationType());
-    }
-    // TODO: END
-    
+    inputTypes.add(inputType2);    
     inputAnns = inputAS.get(inputTypes);
+
+    AnnotationSet splitAnns = null;
+    if(getSplitAnnotationType() != null && !getSplitAnnotationType().isEmpty()) {
+      splitAnns = inputAS.get(getSplitAnnotationType());
+    }
+    
+    boolean haveTwoTypes = inputType1.equals(inputType2);
+    
 
     AnnotationSet containingAnns = null;
     if (spanAnnotationType == null || spanAnnotationType.isEmpty()) {
@@ -474,7 +478,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
     // we first do the counting locally then add everythin to the global map.
     // So we need to count terms, pairs and contexts. 
-    HashMap<String, Integer> termcounts = new HashMap<String, Integer>();
+    // term2counts is only used if we have different types
+    HashMap<String, Integer> term1counts = new HashMap<String, Integer>();
+    HashMap<String, Integer> term2counts = new HashMap<String, Integer>();
     HashMap<String, Integer> paircounts = new HashMap<String, Integer>();
     int contexts = 0;
 
@@ -499,188 +505,182 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         spanToOffsets.add(containingAnn.getEndNode().getOffset());        
       }
     }
+    System.out.println("DEBUG: span from offsets: "+spanFromOffsets);
+    System.out.println("DEBUG: span to offsets: "+spanToOffsets);
+
+    // if a split annotation type has been specified, go through all the spans
+    // and get the contained split annotations and re-create the from and to
+    // offsets again
+    if (splitAnns!=null) {
+      List<Long> oldSpanFromOffsets = spanFromOffsets;
+      List<Long> oldSpanToOffsets = spanToOffsets;
+      spanFromOffsets = new ArrayList<>();
+      spanToOffsets = new ArrayList<>();
+      // go throw each span
+      for(int i=0;i<oldSpanFromOffsets.size();i++) {
+        long oldFrom = oldSpanFromOffsets.get(i);
+        long oldTo = oldSpanToOffsets.get(i);
+        if(oldFrom==oldTo) continue;
+        AnnotationSet splits = splitAnns.get(oldFrom,oldTo);        
+        spanFromOffsets.add(oldFrom);
+        if(splits.size()>0) {
+          List<Annotation> sanns = splits.inDocumentOrder();
+          // add all the spans from the start of the old one to each of the 
+          // contained splits to the end of the old one
+          for(Annotation sann : sanns) {
+            spanToOffsets.add(sann.getStartNode().getOffset());
+            spanFromOffsets.add(sann.getEndNode().getOffset());
+          }
+        }
+        spanToOffsets.add(oldTo);
+      }
+      System.out.println("DEBUG: after splits span from offsets: "+spanFromOffsets);
+      System.out.println("DEBUG: sfter splits span to offsets: "+spanToOffsets);
+    }
+
     
-    // we re-use these sets
-    HashSet<String> termsForContext = new HashSet<String>();
+    // we re-use these sets for every context to figure out which unique
+    // pairs and terms we find in the context.
+    HashSet<String> term1sForContext = new HashSet<String>();
+    HashSet<String> term2sForContext = new HashSet<String>();
     HashSet<String> pairsForContext = new HashSet<String>();
-    
-    //System.out.println("DEBUG: span from offsets: "+spanFromOffsets);
-    //System.out.println("DEBUG: span to offsets: "+spanToOffsets);
+
     for(int i=0;i<spanFromOffsets.size();i++) {
       long fromOffset = spanFromOffsets.get(i);
       long toOffset = spanToOffsets.get(i);
-      // get the terms and maybe split annotations inside that span in document order as a list 
+      // get the terms inside that span in document order as a list 
       List<Annotation> inAnns = inputAnns.get(fromOffset, toOffset).inDocumentOrder();
       if(inAnns.size() < 2) continue; // Spans with less than 2 elements are ignored
-      // pre-calculate the strings we want to use: we create two lists of       
-      // strings containing the strings for the first and second type 
-      // but if we just have one type, a single list gets shared.
-      // we also use a list of integers 1 or 2 or 0 for split to indicate which type 
-      // we found at that location
-      List<String> strings1 = new ArrayList<String>();
-      List<String> strings2 = null;
+      
+      // we have a span to process. We do this by extracting the strings 
+      // and processing by string index now, instead of using offsets any more
+      List<String> strings = new ArrayList<String>();           
       List<Integer> anntypes = new ArrayList<Integer>();
-      if(inputType1.equals(inputType2)) {
-        strings2 = strings1;
-      } else {
-        strings2 = new ArrayList<String>();        
-      }
+
       for (Annotation ann : inAnns) {
-        if (ann.getType().equals(inputType1)) {
-          // If we have two types we need to add an empty element to strings2
-          if(strings1 != strings2) strings2.add("");
-          strings1.add(getStringForAnn(ann));
+        strings.add(getStringForAnn(ann));
+        if(ann.getType().equals(inputType1)) {
           anntypes.add(1);
-        } else if(ann.getType().equals(inputType2)) {
-          // we only get into the else if we actual have two types because otherwise
-          // we would have gone into the then! So
-          // we have to separate string tables
-          // TODO: may want to use different case/language settings for type 2
-          strings1.add("");
-          strings2.add(getStringForAnn(ann));
-          anntypes.add(2);
         } else {
-          strings1.add("");
-          anntypes.add(0);
+          anntypes.add(2);
         }
       }
       
-      
-      // now do the whole processing for each section split up by the split annotations
-      // however we only need to check if we actually have a span annotation type
-      // The following lists contain the indices of where a span starts to where
-      // a span ends in inAnns
-      List<Integer> spanStarts = new ArrayList<Integer>();
-      List<Integer> spanEnds = new ArrayList<Integer>();
-      if(!getSplitAnnotationType().isEmpty()) {
-        // get all the span positions in the inAnns list
-        boolean inSpan = false;
-        int j = 0;
-        //for(Annotation inAnn : inAnns) {
-        for(int anntype : anntypes) {
-          //if(!inSpan && inAnn.getType().equals(inputType1)) {
-          if(!inSpan && anntype != 0) {
-            spanStarts.add(j);
-            inSpan = true;
-          //} else if(inSpan && inAnn.getType().equals(splitAnnotationType)) {
-          } else if(inSpan && anntype == 0) {
-            spanEnds.add(j-1);
-            inSpan = false;
+      int spanLength = strings.size();
+      // Now that we have an array of strings and another of types, we can
+      // go through each window and then for each window do the pairs counting
+      int workingSlWSize = spanLength;
+      if(getSlidingWindowSize()>0 && getSlidingWindowSize() < spanLength) {
+        workingSlWSize = getSlidingWindowSize();
+      }
+      // now iterate the sliding window as often inside the span as possible
+      int maxWindowIndex = spanLength-workingSlWSize;
+      //System.out.println("DEBUG: nrWindows: "+nrWindows);
+      // Iterate over the contexts, once we are here, each context gets 
+      // counted, no matter if we actually find a pair inside (if two different types)
+      for(int k=0; k<=maxWindowIndex; k++) {
+        // count the context
+        term1sForContext.clear();
+        term1sForContext.clear();
+        pairsForContext.clear();
+        contexts += 1;
+        if(haveTwoTypes) {
+          // If we have two term types, we need to iterate over type one in one loop
+          // and type 2 in another and find and count separately. Also, in that 
+          // case the first part of a pair is always from type 1 and the second from
+          // type 2. 
+          // We iterate over the whole window and look at each term and depending
+          // on type add it to the set. If it is type 1 we also iterate over the 
+          // same window fully to find all strings of type 2 and build a pair.
+          // We could avoid looping over all n elements for each element of type 1
+          // but that would require constructing another index array first which 
+          // may end up being slower
+          for (int m = 0; m < workingSlWSize; m++) {
+            String term = strings.get(k+m);
+            int thetype = anntypes.get(k+m);
+            if(thetype==1) { 
+              term1sForContext.add(term);              
+              for (int n = 0; n < workingSlWSize; n++) {
+                if(thetype!=anntypes.get(k+n)) {
+                  pairsForContext.add(term+"\t"+strings.get(k+n));
+                }
+              }
+            } else { 
+              term2sForContext.add(term);            
+            }
+          } // outer: m
+          System.out.println("DEBUG: term1s for context: "+term1sForContext);
+          System.out.println("DEBUG: term2s for context: "+term2sForContext);
+          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          for(String t4c : term1sForContext) {
+            incrementHashMapInteger(term1counts,t4c,1);
           }
-          j++;
-        } // for
-        // if after this loop we are still "inSpan" we need to add the latest
-        // ann index as the end
-        if(inSpan) spanEnds.add(j-1);
-        assert(spanEnds.size() == spanStarts.size());
-      } else {
-        // we just go from the first to the last
-        spanStarts.add(0);
-        spanEnds.add(inAnns.size()-1);
-      }
-      //System.out.println("DEBUG: splitspans from offsets: "+spanFromOffsets);
-      //System.out.println("DEBUG: splitspans to offsets: "+spanFromOffsets);
-      
-      
-      // Now we have the actual spans described as the index ranges in spanStarts and spanEnds,
-      // so iterate over those
-      for(int j=0; j<spanStarts.size(); j++) {
-        int fromIndex = spanStarts.get(j);
-        int toIndex = spanEnds.get(j);
-        // again, if the span is < 2, skip it
-        int spanLength = toIndex-fromIndex+1;
-        if(spanLength<2) continue;
-        // OK, we have a span to process, if we have a sliding window size
-        // defined then slide the window if possible, otherwise just 
-        // process the span as one window. To use the same code, we just define
-        // the "working sliding window" size to be the length of the span length
-        int workingSlWSize = spanLength;
-        // TODO: need to check that the sliding window size is 0 or some value
-        // >= 2 in the runtime init code, so here we rely it is either 0 or valid
-        if(getSlidingWindowSize()>0) {
-          workingSlWSize = getSlidingWindowSize();
-        }
-        // now iterate the sliding window as often inside the span as possible
-        int nrWindows = spanLength-workingSlWSize;
-        //System.out.println("DEBUG: nrWindows: "+nrWindows);
-        for(int k=0; k<=nrWindows; k++) {
-          // count the context
-          contexts += 1;
-          // the annotations from 
-          // fromIndex+k to toIndex+k are getting processed to 
-          // count any occuring terms or pairs. Note that if a term
-          // or pair occurs more than once, we only count once! So we 
-          // create a set of all terms and a set of all pairs
-          // TODO: not sure what the fastest way to do this could be!
-          termsForContext.clear();
-          pairsForContext.clear();
-          
-          // TODO!! Continue: iterate over strings1 outer and strings2 inner
-          // and only take if they match their type! An empty element 
-          // in strings1 or strings2 indiciates that this element is not 
-          // of type1 or type2 respectively. 
-          // TODO!!! THINK! We may need two loops here depending on 
-          // If we have one or two types: if we have one, we can do 
-          // the limited looping, otherwise we need both loops to
-          // go over the whole range?????
-          for(int m=0; m<workingSlWSize; m++) {
-            Annotation termAnn = inAnns.get(fromIndex+k+m);
-            String term = getStringForAnn(termAnn);
-            //System.out.println("DEBUG: context from="+fromOffset+" to="+toOffset+" fromindex="+fromIndex+" k="+k+" m="+m+" toindex="+toIndex+" workingSize="+workingSlWSize+" term="+term);
-            termsForContext.add(term);
-            //System.out.print("DEBUG: Pairs=");
-            for(int n=m+1; n<workingSlWSize; n++) {
-              Annotation termAnn2 = inAnns.get(fromIndex+k+n);
-              String term2 = getStringForAnn(termAnn2);
-              if(term.compareTo(term2) < 0) {
-                //System.out.print(term+"|"+term2+" ");
-                pairsForContext.add(term+"\t"+term2);
-              } else if(term.compareTo(term2) > 0) {
-                //System.out.print(term2+"|"+term+" ");
-                pairsForContext.add(term2+"\t"+term);
-              } else {
-                // if they are equal we do not add a pair
-                // We could but then we would need to find out how to calculate
-                // the counts for chi2 properly since inclusion/exclusion only
-                // works for different terms in the pair
-              }              
-            } // inner for for term2
-            //System.err.println();
-          } // outer for loop for term1
-          // Now we have got the unique terms and pairs occuring in the context
-          // count them
-          //System.out.println("DEBUG: terms for context: "+termsForContext);
-          //System.out.println("DEBUG: pairs for context: "+pairsForContext);
-          
-          for(String t4c : termsForContext) {
-            incrementHashMapInteger(termcounts,t4c,1);
+          for(String t4c : term2sForContext) {
+            incrementHashMapInteger(term2counts,t4c,1);
           }
           for(String p4c : pairsForContext) {
             incrementHashMapInteger(paircounts,p4c,1);
           }
           
-        } // iterate over the actual contexts inside a span
-        
-      } // iterate over the spans
+        } else {
+          // If we just have one term type: got through each string, then
+          // find pairs by going through all strings following that string
+          for (int m = 0; m < workingSlWSize; m++) {
+            String term1 = strings.get(k+m);
+            term1sForContext.add(term1);
+            for (int n = m + 1; n < workingSlWSize; n++) {
+              String term2 = strings.get(k+n);
+              term1sForContext.add(term1);              
+              if(term1.compareTo(term2) < 0) {
+                //System.out.print(term+"|"+term2+" ");
+                pairsForContext.add(term1+"\t"+term2);
+              } else if(term1.compareTo(term2) > 0) {
+                //System.out.print(term2+"|"+term+" ");
+                pairsForContext.add(term2+"\t"+term1);
+              } else {
+                // if they are equal we do not add a pair
+                // We could but then we would need to find out how to calculate
+                // the counts for chi2 properly since inclusion/exclusion only
+                // works for different terms in the pair
+              }                            
+            } // inner for: m
+          } // outer for: n
+          System.out.println("DEBUG: term1s for context: "+term1sForContext);
+          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          for(String t4c : term1sForContext) {
+            incrementHashMapInteger(term1counts,t4c,1);
+          }
+          for(String p4c : pairsForContext) {
+            incrementHashMapInteger(paircounts,p4c,1);
+          }
+        } // process window if we have just one type
 
-      // Now add all the collected values to the global counter variables
+      }
       
+            
       
+    } // for spans
+
+    System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term1counts);
+    System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term2counts);
+    System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
+    //System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
+      
+    for (String term : term1counts.keySet()) {
+      //System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
+      corpusStats.countsTerms1.computeIfAbsent(term, (var -> new LongAdder())).add(term1counts.get(term));
     }
-
-      //System.out.println("DEBUG: termcounts for document "+document.getName()+": "+termcounts);
-      //System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
-      //System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
-      
-          for(String term : termcounts.keySet()) {
-            //System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
-            corpusStats.countsTerms.computeIfAbsent(term, (var -> new LongAdder())).add(termcounts.get(term));
-          }
-          for(String pair : paircounts.keySet()) {
-            //System.err.println("DEBUG: add pair="+pair+" count="+paircounts.get(pair));
-            corpusStats.countsPairs.computeIfAbsent(pair, (var -> new LongAdder())).add(paircounts.get(pair));
-          }
-          corpusStats.totalContexts.add(contexts);
+    if(haveTwoTypes) {
+      for (String term : term2counts.keySet()) {
+        //System.err.println("DEBUG: add term="+term+" count="+termcounts.get(term));
+        corpusStats.countsTerms2.computeIfAbsent(term, (var -> new LongAdder())).add(term2counts.get(term));
+      }
+    }
+    for (String pair : paircounts.keySet()) {
+      //System.err.println("DEBUG: add pair="+pair+" count="+paircounts.get(pair));
+      corpusStats.countsPairs.computeIfAbsent(pair, (var -> new LongAdder())).add(paircounts.get(pair));
+    }
+    corpusStats.totalContexts.add(contexts);
 
     corpusStats.nDocs.add(1);
     benchmarkCheckpoint(startTime, "__CollocationsProcess");
@@ -724,6 +724,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         corpusStats.minContexts_p = getMinContextsP();
         corpusStats.minContexts_t1 = getMinContextsT1();
         corpusStats.minContexts_t2 = getMinContextsT2();
+        corpusStats.haveTwoTypes = inputType1.equals(inputType2);
         sharedData.put("corpusStats", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }

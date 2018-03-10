@@ -46,12 +46,16 @@ public class CorpusStatsCollocationsData implements Serializable {
   // TODO: need to document the default value for pairs which have not been found and what 
   // the value of each metric should be for this. Maybe add this to the sum file if it depends on 
   // the number of pairs, contexts etc.!!!!
-  public ConcurrentHashMap<String, LongAdder> countsTerms
-          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t)
+  public ConcurrentHashMap<String, LongAdder> countsTerms1
+          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t1)
+  public ConcurrentHashMap<String, LongAdder> countsTerms2
+          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t2) if different types
   public ConcurrentHashMap<String, LongAdder> countsPairs
           = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t1,t2)
   // total number of single term occurrences, used to estimate p(t) 
   public LongAdder totalContexts = new LongAdder();
+  
+  public boolean haveTwoTypes = false;
 
   // We do not need this but still good to know the number of documents
   public LongAdder nDocs = new LongAdder();
@@ -81,8 +85,16 @@ public class CorpusStatsCollocationsData implements Serializable {
           Object obj = ois.readObject();
           if (obj instanceof CorpusStatsCollocationsData) {
             CorpusStatsCollocationsData other = (CorpusStatsCollocationsData) obj;
-            countsTerms = other.countsTerms;
+            countsTerms1 = other.countsTerms1;
+            countsTerms1 = other.countsTerms1;            
             countsPairs = other.countsPairs;
+            
+            if(haveTwoTypes != other.haveTwoTypes || 
+                    minContexts_p != other.minContexts_p ||
+                    minContexts_t1 == other.minContexts_t1 ||
+                    minContexts_t2 == other.minContexts_t2) {
+              throw new GateRuntimeException("Loaded data file has different settings");
+            }
             // NOTE: if the loaded stats file has a different case sensitivity setting, 
             // we throw an error, this does not make sense to have!
             if (isCaseSensitive != other.isCaseSensitive) {
@@ -158,8 +170,10 @@ public class CorpusStatsCollocationsData implements Serializable {
   public PairStats calcStats(String pair) {
     String[] terms = pair.split("\\t");
     long pairCount = countsPairs.get(pair).sum();
-    long term1Count = countsTerms.get(terms[0]).sum();
-    long term2Count = countsTerms.get(terms[1]).sum();
+    long term1Count = countsTerms1.get(terms[0]).sum();
+    long term2Count = haveTwoTypes ? 
+            countsTerms2.get(terms[1]).sum() :
+            countsTerms1.get(terms[2]).sum();
     //System.out.println("DEBUG: retrieve counts for pair "+pair+"t0="+terms[0]+" t1="+terms[1]+
     //        "got: "+pairCount+"/"+term1Count+"/"+term2Count);              
     return calcStats_worker(pairCount, term1Count, term2Count);
@@ -243,10 +257,13 @@ public class CorpusStatsCollocationsData implements Serializable {
         // n_pairs = number of different pairs encountered
         // TODO: add scores for PMI, npmi, chi2_p etc. for pairs not found in the corpus!
         // TODO: once we support two types, always add the stats for both!
-        pw.println("ncontexts\tnterms\tnpairs\ndocs");
-        pw.println(totalContexts + "\t" + countsTerms.size() + "\t" + countsPairs.size() + "\t" + nDocs.sum());
+        pw.println("ncontexts\tnterms1\tnterms2\tnpairs\ndocs");
+        long t2s = haveTwoTypes ? countsTerms2.size() : countsTerms1.size();
+        pw.println(totalContexts + "\t" + countsTerms1.size() + "\t" + t2s + "\t" + countsPairs.size() + "\t" + nDocs.sum());
         System.err.println("Number of contexts: " + totalContexts);
-        System.err.println("Number of different terms: " + countsTerms.size());
+        System.err.println("Number of different terms type1: " + countsTerms1.size());
+        if(haveTwoTypes)
+          System.err.println("Number of different terms type2: " + countsTerms2.size());
         System.err.println("Number of different pairs: " + countsPairs.size());
         System.err.println("Docs:  " + nDocs);
       } catch (Exception ex) {
@@ -279,8 +296,10 @@ public class CorpusStatsCollocationsData implements Serializable {
         for (String key : countsPairs.keySet()) {
           String[] terms = key.split("\\t");
           long pairCount = countsPairs.get(key).sum();
-          long term1Count = countsTerms.get(terms[0]).sum();
-          long term2Count = countsTerms.get(terms[1]).sum();
+          long term1Count = countsTerms1.get(terms[0]).sum();
+          long term2Count = haveTwoTypes ? 
+                  countsTerms2.get(terms[1]).sum() :
+                  countsTerms1.get(terms[1]).sum();
           
           if(pairCount < minContexts_p || term1Count < minContexts_t1 || term2Count < minContexts_t2) {
             continue;
