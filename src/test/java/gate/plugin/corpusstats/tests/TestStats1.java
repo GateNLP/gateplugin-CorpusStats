@@ -41,8 +41,8 @@ public class TestStats1 {
     cs.nDocs.add(1);
     cs.totalContexts.add(8+15820+4667+14287173);
     cs.countsPairs.computeIfAbsent("companies\tnew", (var -> new LongAdder())).add(8);
-    cs.countsTerms.computeIfAbsent("companies", (var -> new LongAdder())).add(8+4667);
-    cs.countsTerms.computeIfAbsent("new", (var -> new LongAdder())).add(8+15820);
+    cs.countsTerms1.computeIfAbsent("companies", (var -> new LongAdder())).add(8+4667);
+    cs.countsTerms1.computeIfAbsent("new", (var -> new LongAdder())).add(8+15820);    
     cs.initStats();
     PairStats ret = cs.calcStats("companies\tnew");
     System.err.println("DEBUG: ex1, got stats="+ret);
@@ -61,8 +61,8 @@ public class TestStats1 {
     cs.nDocs.add(1);
     cs.totalContexts.add(31950+12004+4793+848330);
     cs.countsPairs.computeIfAbsent("chambre\thouse", (var -> new LongAdder())).add(31950);
-    cs.countsTerms.computeIfAbsent("chambre", (var -> new LongAdder())).add(31950+4793);
-    cs.countsTerms.computeIfAbsent("house", (var -> new LongAdder())).add(31950+12004);
+    cs.countsTerms1.computeIfAbsent("chambre", (var -> new LongAdder())).add(31950+4793);
+    cs.countsTerms1.computeIfAbsent("house", (var -> new LongAdder())).add(31950+12004);
     cs.initStats();
     ret = cs.calcStats("chambre\thouse");
     System.err.println("DEBUG: ex2a, got stats="+ret);
@@ -84,16 +84,16 @@ public class TestStats1 {
     cs.countsPairs.computeIfAbsent("apricot\tsugar", (var -> new LongAdder())).add(1);
     cs.countsPairs.computeIfAbsent("pineapple\tsugar", (var -> new LongAdder())).add(1);
     
-    cs.countsTerms.computeIfAbsent("computer", (var -> new LongAdder())).add(3);
-    cs.countsTerms.computeIfAbsent("data", (var -> new LongAdder())).add(7);
-    cs.countsTerms.computeIfAbsent("pinch", (var -> new LongAdder())).add(2);
-    cs.countsTerms.computeIfAbsent("result", (var -> new LongAdder())).add(5);
-    cs.countsTerms.computeIfAbsent("sugar", (var -> new LongAdder())).add(2);
+    cs.countsTerms1.computeIfAbsent("computer", (var -> new LongAdder())).add(3);
+    cs.countsTerms1.computeIfAbsent("data", (var -> new LongAdder())).add(7);
+    cs.countsTerms1.computeIfAbsent("pinch", (var -> new LongAdder())).add(2);
+    cs.countsTerms1.computeIfAbsent("result", (var -> new LongAdder())).add(5);
+    cs.countsTerms1.computeIfAbsent("sugar", (var -> new LongAdder())).add(2);
     
-    cs.countsTerms.computeIfAbsent("apricot", (var -> new LongAdder())).add(2);
-    cs.countsTerms.computeIfAbsent("pineapple", (var -> new LongAdder())).add(2);
-    cs.countsTerms.computeIfAbsent("digital", (var -> new LongAdder())).add(4);
-    cs.countsTerms.computeIfAbsent("information", (var -> new LongAdder())).add(11);
+    cs.countsTerms1.computeIfAbsent("apricot", (var -> new LongAdder())).add(2);
+    cs.countsTerms1.computeIfAbsent("pineapple", (var -> new LongAdder())).add(2);
+    cs.countsTerms1.computeIfAbsent("digital", (var -> new LongAdder())).add(4);
+    cs.countsTerms1.computeIfAbsent("information", (var -> new LongAdder())).add(11);
     
     ret = cs.calcStats("apricot\tpinch");
     assertEquals(0.05, ret.p_a_b, 0.01);

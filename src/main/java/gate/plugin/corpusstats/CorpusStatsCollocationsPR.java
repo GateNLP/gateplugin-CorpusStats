@@ -465,7 +465,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       splitAnns = inputAS.get(getSplitAnnotationType());
     }
     
-    boolean haveTwoTypes = inputType1.equals(inputType2);
+    boolean haveTwoTypes = !inputType1.equals(inputType2);
     
 
     AnnotationSet containingAnns = null;
@@ -565,7 +565,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           anntypes.add(2);
         }
       }
-      
+      System.out.println("DEBUG: strings for span: "+strings);
+      System.out.println("DEBUG: anntypes for span: "+anntypes);
+
       int spanLength = strings.size();
       // Now that we have an array of strings and another of types, we can
       // go through each window and then for each window do the pairs counting
@@ -724,7 +726,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         corpusStats.minContexts_p = getMinContextsP();
         corpusStats.minContexts_t1 = getMinContextsT1();
         corpusStats.minContexts_t2 = getMinContextsT2();
-        corpusStats.haveTwoTypes = inputType1.equals(inputType2);
+        corpusStats.haveTwoTypes = !inputType1.equals(inputType2);
         sharedData.put("corpusStats", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }

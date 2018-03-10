@@ -450,12 +450,28 @@
                   <string>en</string>
                 </entry>
                 <entry>
+                  <string>dampeningCoefficient</string>
+                  <double>0.0</double>
+                </entry>
+                <entry>
+                  <string>stringFeature1</string>
+                  <string></string>
+                </entry>
+                <entry>
+                  <string>stringFeature2</string>
+                  <string></string>
+                </entry>
+                <entry>
                   <string>caseSensitive</string>
                   <boolean>false</boolean>
                 </entry>
                 <entry>
                   <string>document</string>
                   <null/>
+                </entry>
+                <entry>
+                  <string>minContextsP</string>
+                  <int>-1</int>
                 </entry>
                 <entry>
                   <string>dataFileUrl</string>
@@ -472,12 +488,12 @@
                   <string></string>
                 </entry>
                 <entry>
-                  <string>stringFeature1</string>
+                  <string>splitAnnotationType</string>
                   <string></string>
                 </entry>
                 <entry>
-                  <string>splitAnnotationType</string>
-                  <string></string>
+                  <string>laplaceCoefficient</string>
+                  <double>0.0</double>
                 </entry>
                 <entry>
                   <string>pairStatsFileUrl</string>
@@ -486,18 +502,22 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
+                  <string>inputAnnotationType1</string>
+                  <string>WordToken</string>
+                </entry>
+                <entry>
+                  <string>inputAnnotationType2</string>
+                  <string>WordToken</string>
+                </entry>
+                <entry>
                   <string>sumsFileUrl</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$relpath$statsCollSum.tsv</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
-                  <string>inputAnnotationType1</string>
-                  <string>WordToken</string>
-                </entry>
-                <entry>
-                  <string>minContexts1</string>
-                  <int>1</int>
+                  <string>minTf</string>
+                  <double>0.0</double>
                 </entry>
                 <entry>
                   <string>reuseExisting</string>
@@ -505,7 +525,19 @@
                 </entry>
                 <entry>
                   <string>slidingWindowSize</string>
-                  <int>2</int>
+                  <int>0</int>
+                </entry>
+                <entry>
+                  <string>minContextsT2</string>
+                  <int>-1</int>
+                </entry>
+                <entry>
+                  <string>minContextsT1</string>
+                  <int>1</int>
+                </entry>
+                <entry>
+                  <string>tfFileUrl</string>
+                  <null/>
                 </entry>
                 <entry>
                   <string>spanAnnotationType</string>

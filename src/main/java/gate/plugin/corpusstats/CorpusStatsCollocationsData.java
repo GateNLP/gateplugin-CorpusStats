@@ -173,7 +173,7 @@ public class CorpusStatsCollocationsData implements Serializable {
     long term1Count = countsTerms1.get(terms[0]).sum();
     long term2Count = haveTwoTypes ? 
             countsTerms2.get(terms[1]).sum() :
-            countsTerms1.get(terms[2]).sum();
+            countsTerms1.get(terms[1]).sum();
     //System.out.println("DEBUG: retrieve counts for pair "+pair+"t0="+terms[0]+" t1="+terms[1]+
     //        "got: "+pairCount+"/"+term1Count+"/"+term2Count);              
     return calcStats_worker(pairCount, term1Count, term2Count);
