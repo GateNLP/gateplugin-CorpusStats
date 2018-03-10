@@ -8,3 +8,11 @@ Rule: createWordToken1
 ):label
 -->
 :label.WordToken = {string = :label.Token.string}
+
+Rule: createPunctToken1
+(
+  {Token.kind == punctuation}
+):label
+-->
+:label.PunctToken = {string = :label.Token.string}
+

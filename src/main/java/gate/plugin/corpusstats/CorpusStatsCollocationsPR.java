@@ -505,8 +505,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         spanToOffsets.add(containingAnn.getEndNode().getOffset());        
       }
     }
-    System.out.println("DEBUG: span from offsets: "+spanFromOffsets);
-    System.out.println("DEBUG: span to offsets: "+spanToOffsets);
+    //System.out.println("DEBUG: span from offsets: "+spanFromOffsets);
+    //System.out.println("DEBUG: span to offsets: "+spanToOffsets);
 
     // if a split annotation type has been specified, go through all the spans
     // and get the contained split annotations and re-create the from and to
@@ -534,8 +534,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         }
         spanToOffsets.add(oldTo);
       }
-      System.out.println("DEBUG: after splits span from offsets: "+spanFromOffsets);
-      System.out.println("DEBUG: sfter splits span to offsets: "+spanToOffsets);
+      //System.out.println("DEBUG: after splits span from offsets: "+spanFromOffsets);
+      //System.out.println("DEBUG: after splits span to offsets: "+spanToOffsets);
     }
 
     
@@ -565,8 +565,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           anntypes.add(2);
         }
       }
-      System.out.println("DEBUG: strings for span: "+strings);
-      System.out.println("DEBUG: anntypes for span: "+anntypes);
+      //System.out.println("DEBUG: strings for span: "+strings);
+      //System.out.println("DEBUG: anntypes for span: "+anntypes);
 
       int spanLength = strings.size();
       // Now that we have an array of strings and another of types, we can
@@ -583,7 +583,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       for(int k=0; k<=maxWindowIndex; k++) {
         // count the context
         term1sForContext.clear();
-        term1sForContext.clear();
+        term2sForContext.clear();
         pairsForContext.clear();
         contexts += 1;
         if(haveTwoTypes) {
@@ -611,9 +611,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
               term2sForContext.add(term);            
             }
           } // outer: m
-          System.out.println("DEBUG: term1s for context: "+term1sForContext);
-          System.out.println("DEBUG: term2s for context: "+term2sForContext);
-          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          //System.out.println("DEBUG: term1s for context: "+term1sForContext);
+          //System.out.println("DEBUG: term2s for context: "+term2sForContext);
+          //System.out.println("DEBUG: pairs for context: "+pairsForContext);
           for(String t4c : term1sForContext) {
             incrementHashMapInteger(term1counts,t4c,1);
           }
@@ -647,8 +647,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
               }                            
             } // inner for: m
           } // outer for: n
-          System.out.println("DEBUG: term1s for context: "+term1sForContext);
-          System.out.println("DEBUG: pairs for context: "+pairsForContext);
+          //System.out.println("DEBUG: term1s for context: "+term1sForContext);
+          //System.out.println("DEBUG: pairs for context: "+pairsForContext);
           for(String t4c : term1sForContext) {
             incrementHashMapInteger(term1counts,t4c,1);
           }
@@ -663,9 +663,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       
     } // for spans
 
-    System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term1counts);
-    System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term2counts);
-    System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
+    //System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term1counts);
+    //System.out.println("DEBUG: term1counts for document "+document.getName()+": "+term2counts);
+    //System.out.println("DEBUG: paircounts for document "+document.getName()+": "+paircounts);
     //System.out.println("DEBUG: contexts for document "+document.getName()+": "+contexts);
       
     for (String term : term1counts.keySet()) {

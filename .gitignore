@@ -5,6 +5,10 @@
 *.tmp
 
 tmp/
+/tests/*.ser
+/tests/*.tsv
+/tests/*.tsv.old
+/TEST-*
 
 logs/
 

@@ -219,7 +219,7 @@ public class CorpusStatsCollocationsData implements Serializable {
     // neither a nor b: total contexts minus where a occurs, minus where
     // be occurs plus the ones where a and b occur together 
     ret.p_na_nb = (Nfloat - ret.term1Count - ret.term2Count + ret.pairCount) / Nfloat;
-    //System.err.println("DEBUG: pair=" + pair + ", N=" + Nfloat + ", t0c=" + ret.term1Count + ", t1c=" + ret.term2Count + ", pairc=" + ret.pairCount);
+    //System.err.println("DEBUG: N=" + Nfloat + ", t0c=" + ret.term1Count + ", t1c=" + ret.term2Count + ", pairc=" + ret.pairCount);
     //System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb=" + ret.p_a_b + "," + ret.p_na_b + "," + ret.p_a_nb + "," + ret.p_na_nb);
     // Expected values for all 4 combinations, calculated from the margins
     //double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
@@ -232,8 +232,8 @@ public class CorpusStatsCollocationsData implements Serializable {
     ret.chi2 = tmp
             / ((ret.p_a_b + ret.p_a_nb) * (ret.p_a_b + ret.p_na_b) * (ret.p_a_nb + ret.p_na_nb) * (ret.p_na_b + ret.p_na_nb));
 
+    //System.err.println("DEBUG: chi2=" + ret.chi2);
     ret.chi2_p = chdist.cumulativeProbability(ret.chi2);
-
     // 4) calculate student t p-value
     ret.p_a_b_expected = (ret.term1Count / Nfloat) * (ret.term2Count / Nfloat);  // expected p if indep
     double samplevariance = ret.p_a_b * (1.0 - ret.p_a_b);
@@ -301,6 +301,7 @@ public class CorpusStatsCollocationsData implements Serializable {
                   countsTerms2.get(terms[1]).sum() :
                   countsTerms1.get(terms[1]).sum();
           
+          //System.err.println("DEBUG: PAIR="+terms[0]+"/"+terms[1]);
           if(pairCount < minContexts_p || term1Count < minContexts_t1 || term2Count < minContexts_t2) {
             continue;
           }

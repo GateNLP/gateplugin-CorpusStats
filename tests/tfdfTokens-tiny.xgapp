@@ -210,14 +210,14 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
                   <string>tokeniserRulesURL</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$gatehome$plugins/ANNIE/resources/tokeniser/AlternateTokeniser.rules</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
+                </entry>
+                <entry>
+                  <string>encoding</string>
+                  <string>UTF-8</string>
                 </entry>
                 <entry>
                   <string>transducerGrammarURL</string>
@@ -265,14 +265,14 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
                   <string>gazetteerListsURL</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$gatehome$plugins/ANNIE/resources/sentenceSplitter/gazetteer/lists.def</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
+                </entry>
+                <entry>
+                  <string>encoding</string>
+                  <string>UTF-8</string>
                 </entry>
                 <entry>
                   <string>transducerURL</string>
@@ -442,6 +442,7 @@
           <featureName></featureName>
           <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
+            <corpus class="gate.util.persistence.CorpusPersistence" reference="../../../../../corpus"/>
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
@@ -481,7 +482,7 @@
                 </entry>
                 <entry>
                   <string>corpus</string>
-                  <null/>
+                  <gate.util.persistence.CorpusPersistence reference="../../../../../../../../corpus"/>
                 </entry>
                 <entry>
                   <string>inputAnnotationSet</string>
@@ -496,18 +497,18 @@
                   <double>0.0</double>
                 </entry>
                 <entry>
+                  <string>inputAnnotationType1</string>
+                  <string>WordToken</string>
+                </entry>
+                <entry>
                   <string>pairStatsFileUrl</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$relpath$statsCollStats.tsv</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
-                  <string>inputAnnotationType1</string>
-                  <string>WordToken</string>
-                </entry>
-                <entry>
                   <string>inputAnnotationType2</string>
-                  <string>WordToken</string>
+                  <string>PunctToken</string>
                 </entry>
                 <entry>
                   <string>sumsFileUrl</string>
