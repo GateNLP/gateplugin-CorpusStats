@@ -18,7 +18,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.zip.GZIPInputStream;
@@ -66,6 +65,14 @@ public class CorpusStatsCollocationsData implements Serializable {
   public long minContexts_t1 = 1;
   public long minContexts_t2 = 1;
   public long minContexts_p = 1;
+  
+  public double laplaceCoefficient = 0.0;
+  public double nPairsD;
+  public double nTerms1D;
+  public double nTerms2D;
+  protected double laplacePairsN;
+  protected double laplaceTerms1N;
+  protected double laplaceTerms2N;
 
   public void load(URL dataUrl, URL sumsTsvUrl, URL statsTsvUrl) {
     boolean haveLoaded = false;
@@ -158,6 +165,14 @@ public class CorpusStatsCollocationsData implements Serializable {
     } else {
       System.err.println("WARNING: only one context, cannot calculate student-t p-value, setting to 0");
     }
+    nPairsD = (double)countsPairs.size();
+    nTerms1D = (double)countsTerms1.size();
+    if(haveTwoTypes) nTerms2D = (double)countsTerms2.size();
+    else nTerms2D = nTerms1D;
+    laplacePairsN = Nfloat + laplaceCoefficient * nPairsD;
+    laplaceTerms1N = Nfloat + laplaceCoefficient * nTerms1D;
+    laplaceTerms2N = Nfloat + laplaceCoefficient * nTerms2D;
+    
   }
 
 
@@ -190,9 +205,16 @@ public class CorpusStatsCollocationsData implements Serializable {
     ret.term2Count = term2Count;
     // probability of the pair a,b is the number of contexts it appears in
     // divided by the total number of contexts
-    ret.p_a_b = (float) ret.pairCount / Nfloat;
-    ret.p_a = (float) ret.term1Count / Nfloat;
-    ret.p_b = (float) ret.term2Count / Nfloat;
+    if(laplaceCoefficient != 0.0) {
+      System.err.println("DEBUG: !!!!!!!!!!!!!! Using Laplace Smoothing, c="+laplaceCoefficient);
+      ret.p_a_b = ((double) ret.pairCount + laplaceCoefficient) / laplacePairsN;
+      ret.p_a = ((double) ret.term1Count + laplaceCoefficient) / laplaceTerms1N;
+      ret.p_b = ((double) ret.term2Count + laplaceCoefficient) / laplaceTerms2N;      
+    } else {
+      ret.p_a_b = (double) ret.pairCount / Nfloat;
+      ret.p_a = (double) ret.term1Count / Nfloat;
+      ret.p_b = (double) ret.term2Count / Nfloat;
+    }
 
     // TODO: skip this if we do not have a pair where the minimum
     // frequency of both terms is satisfied!
@@ -213,29 +235,36 @@ public class CorpusStatsCollocationsData implements Serializable {
     // 3) person's chi-squared 
     // prob of b occuring in a context that does not have a is number of 
     // times b occurs minus the times b occurs with a, then divided by ...
-    ret.p_na_b = (ret.term2Count - ret.pairCount) / Nfloat;
+    double c_a_b = ret.pairCount;
+    double c_na_b = (ret.term2Count - ret.pairCount);
     // mirror image for a where b does not occur
-    ret.p_a_nb = (ret.term1Count - ret.pairCount) / Nfloat;
+    double c_a_nb = (ret.term1Count - ret.pairCount);
     // neither a nor b: total contexts minus where a occurs, minus where
     // be occurs plus the ones where a and b occur together 
+    double c_na_nb = (Nfloat - ret.term1Count - ret.term2Count + ret.pairCount);
+    ret.p_na_b = (ret.term2Count - ret.pairCount) / Nfloat;
+    ret.p_a_nb = (ret.term1Count - ret.pairCount) / Nfloat;
     ret.p_na_nb = (Nfloat - ret.term1Count - ret.term2Count + ret.pairCount) / Nfloat;
+    
     //System.err.println("DEBUG: N=" + Nfloat + ", t0c=" + ret.term1Count + ", t1c=" + ret.term2Count + ", pairc=" + ret.pairCount);
     //System.err.println("DEBUG: p_a_b,p_na_b,p_a_nb,p_na_nb=" + ret.p_a_b + "," + ret.p_na_b + "," + ret.p_a_nb + "," + ret.p_na_nb);
-    // Expected values for all 4 combinations, calculated from the margins
-    //double e_a_b = (p_a_b + p_a_nb) * (p_a_b + p_na_b);
-    //double e_na_b = (p_na_b + p_na_nb) * (p_na_b + p_a_b);
-    //double e_a_nb = (p_a_nb + p_a_b) * (p_a_nb + p_na_nb);
-    //double e_na_nb = (p_na_nb + p_na_b) * (p_na_nb + p_a_nb);
 
-    double tmp = (ret.p_a_b * ret.p_na_nb - ret.p_a_nb * ret.p_na_b);
+    // The following should work with both probabilities and counts, for now
+    // we use counts because maybe faster?
+    // !!! Also: this works with laplace smoothing for PMI switched on, but we cannot
+    // make laplace smoothing work with chi-squared because we cannot easily calculate
+    // the "number of values" needed.
+    double tmp = (c_a_b * c_na_nb - c_a_nb * c_na_b);
     tmp = Nfloat * tmp * tmp;
     ret.chi2 = tmp
-            / ((ret.p_a_b + ret.p_a_nb) * (ret.p_a_b + ret.p_na_b) * (ret.p_a_nb + ret.p_na_nb) * (ret.p_na_b + ret.p_na_nb));
+            / ((c_a_b + c_a_nb) * (c_a_b + c_na_b) * (c_a_nb + c_na_nb) * (c_na_b + c_na_nb));
 
     //System.err.println("DEBUG: chi2=" + ret.chi2);
     ret.chi2_p = chdist.cumulativeProbability(ret.chi2);
+    
+       
     // 4) calculate student t p-value
-    ret.p_a_b_expected = (ret.term1Count / Nfloat) * (ret.term2Count / Nfloat);  // expected p if indep
+    ret.p_a_b_expected = ret.p_a * ret.p_b;  // expected p if indep
     double samplevariance = ret.p_a_b * (1.0 - ret.p_a_b);
     ret.student_t = (ret.p_a_b - ret.p_a_b_expected) / Math.sqrt(samplevariance / Nfloat);
 
@@ -290,7 +319,7 @@ public class CorpusStatsCollocationsData implements Serializable {
         // npmi 
         // chi2_p = p-value of the chi-squared statistic
         // student_t_p - p-value of the student t value
-        pw.println("term1\tterm2\tfreqp\tfreqt1\tfreqt2\tprob\tprobexp\tpmi\tnpmi\tchi2\tchi2_p\tstudent_t\tstudent_t_p");
+        pw.println("term1\tterm2\tfreqp\tfreqt1\tfreqt2\tprob\tprobexp\tpmi\tnpmi\twpmi\tchi2\tchi2_p\tstudent_t\tstudent_t_p");
         
         int lines = 0;
         for (String key : countsPairs.keySet()) {
@@ -333,6 +362,8 @@ public class CorpusStatsCollocationsData implements Serializable {
           pw.print(stats.pmi);
           pw.print("\t");
           pw.print(stats.npmi);
+          pw.print("\t");
+          pw.print(stats.wpmi);
           pw.print("\t");
           pw.print(stats.chi2);
           pw.print("\t");

@@ -18,7 +18,7 @@
       <docList>
         <gate.util.persistence.LRPersistence>
           <resourceType>gate.corpora.DocumentImpl</resourceType>
-          <resourceName>doc3.xml_00016</resourceName>
+          <resourceName>doc3.xml_0000E</resourceName>
           <initParams class="gate.util.persistence.MapPersistence">
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
@@ -65,7 +65,7 @@
         </gate.util.persistence.LRPersistence>
         <gate.util.persistence.LRPersistence>
           <resourceType>gate.corpora.DocumentImpl</resourceType>
-          <resourceName>doc2.xml_00015</resourceName>
+          <resourceName>doc2.xml_0000D</resourceName>
           <initParams class="gate.util.persistence.MapPersistence">
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
@@ -112,7 +112,7 @@
         </gate.util.persistence.LRPersistence>
         <gate.util.persistence.LRPersistence>
           <resourceType>gate.corpora.DocumentImpl</resourceType>
-          <resourceName>doc1.xml_00014</resourceName>
+          <resourceName>doc1.xml_0000C</resourceName>
           <initParams class="gate.util.persistence.MapPersistence">
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
@@ -349,14 +349,14 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
                   <string>tokeniserRulesURL</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$gatehome$plugins/ANNIE/resources/tokeniser/AlternateTokeniser.rules</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
+                </entry>
+                <entry>
+                  <string>encoding</string>
+                  <string>UTF-8</string>
                 </entry>
                 <entry>
                   <string>transducerGrammarURL</string>
@@ -404,14 +404,14 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
                   <string>gazetteerListsURL</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$gatehome$plugins/ANNIE/resources/sentenceSplitter/gazetteer/lists.def</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
+                </entry>
+                <entry>
+                  <string>encoding</string>
+                  <string>UTF-8</string>
                 </entry>
                 <entry>
                   <string>transducerURL</string>
@@ -527,11 +527,11 @@
                   <null/>
                 </entry>
                 <entry>
-                  <string>keyFeature</string>
+                  <string>inputAnnotationSet</string>
                   <string></string>
                 </entry>
                 <entry>
-                  <string>inputAnnotationSet</string>
+                  <string>keyFeature</string>
                   <string></string>
                 </entry>
                 <entry>
@@ -609,8 +609,8 @@
                   <null/>
                 </entry>
                 <entry>
-                  <string>minContexts1</string>
-                  <int>1</int>
+                  <string>minContextsP</string>
+                  <int>-1</int>
                 </entry>
                 <entry>
                   <string>dataFileUrl</string>
@@ -631,16 +631,8 @@
                   <string></string>
                 </entry>
                 <entry>
-                  <string>minContexts2</string>
-                  <int>-1</int>
-                </entry>
-                <entry>
                   <string>laplaceCoefficient</string>
                   <double>0.0</double>
-                </entry>
-                <entry>
-                  <string>inputAnnotationType1</string>
-                  <string>WordToken</string>
                 </entry>
                 <entry>
                   <string>pairStatsFileUrl</string>
@@ -649,8 +641,12 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
+                  <string>inputAnnotationType1</string>
+                  <string>WordToken</string>
+                </entry>
+                <entry>
                   <string>inputAnnotationType2</string>
-                  <string>Token</string>
+                  <string>PunctToken</string>
                 </entry>
                 <entry>
                   <string>sumsFileUrl</string>
@@ -668,7 +664,15 @@
                 </entry>
                 <entry>
                   <string>slidingWindowSize</string>
-                  <int>2</int>
+                  <int>0</int>
+                </entry>
+                <entry>
+                  <string>minContextsT2</string>
+                  <int>-1</int>
+                </entry>
+                <entry>
+                  <string>minContextsT1</string>
+                  <int>1</int>
                 </entry>
                 <entry>
                   <string>tfFileUrl</string>

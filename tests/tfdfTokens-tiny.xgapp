@@ -18,14 +18,14 @@
       <docList>
         <gate.util.persistence.LRPersistence>
           <resourceType>gate.corpora.DocumentImpl</resourceType>
-          <resourceName>doc-tiny2.txt_00010</resourceName>
+          <resourceName>doc3.xml_0000E</resourceName>
           <initParams class="gate.util.persistence.MapPersistence">
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
               <entry>
                 <string>sourceUrl</string>
                 <gate.util.persistence.PersistenceManager-URLHolder>
-                  <urlString>$relpath$doc-tiny2.txt</urlString>
+                  <urlString>$relpath$doc3.xml</urlString>
                 </gate.util.persistence.PersistenceManager-URLHolder>
               </entry>
               <entry>
@@ -65,14 +65,61 @@
         </gate.util.persistence.LRPersistence>
         <gate.util.persistence.LRPersistence>
           <resourceType>gate.corpora.DocumentImpl</resourceType>
-          <resourceName>doc-tiny1.txt_0000F</resourceName>
+          <resourceName>doc2.xml_0000D</resourceName>
           <initParams class="gate.util.persistence.MapPersistence">
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
               <entry>
                 <string>sourceUrl</string>
                 <gate.util.persistence.PersistenceManager-URLHolder>
-                  <urlString>$relpath$doc-tiny1.txt</urlString>
+                  <urlString>$relpath$doc2.xml</urlString>
+                </gate.util.persistence.PersistenceManager-URLHolder>
+              </entry>
+              <entry>
+                <string>preserveOriginalContent</string>
+                <boolean>false</boolean>
+              </entry>
+              <entry>
+                <string>collectRepositioningInfo</string>
+                <boolean>false</boolean>
+              </entry>
+              <entry>
+                <string>markupAware</string>
+                <boolean>true</boolean>
+              </entry>
+              <entry>
+                <string>sourceUrlEndOffset</string>
+                <null/>
+              </entry>
+              <entry>
+                <string>stringContent</string>
+                <string></string>
+              </entry>
+              <entry>
+                <string>mimeType</string>
+                <null/>
+              </entry>
+              <entry>
+                <string>encoding</string>
+                <string>UTF-8</string>
+              </entry>
+              <entry>
+                <string>sourceUrlStartOffset</string>
+                <null/>
+              </entry>
+            </localMap>
+          </initParams>
+        </gate.util.persistence.LRPersistence>
+        <gate.util.persistence.LRPersistence>
+          <resourceType>gate.corpora.DocumentImpl</resourceType>
+          <resourceName>doc1.xml_0000C</resourceName>
+          <initParams class="gate.util.persistence.MapPersistence">
+            <mapType>gate.util.SimpleFeatureMapImpl</mapType>
+            <localMap>
+              <entry>
+                <string>sourceUrl</string>
+                <gate.util.persistence.PersistenceManager-URLHolder>
+                  <urlString>$relpath$doc1.xml</urlString>
                 </gate.util.persistence.PersistenceManager-URLHolder>
               </entry>
               <entry>
@@ -120,8 +167,100 @@
             <string>documentsList</string>
             <gate.util.persistence.CollectionPersistence>
               <localList>
-                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence"/>
-                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence[2]"/>
+                <gate.util.persistence.LRPersistence>
+                  <resourceType>gate.corpora.DocumentImpl</resourceType>
+                  <resourceName>doc-tiny2.txt_00010</resourceName>
+                  <initParams class="gate.util.persistence.MapPersistence">
+                    <mapType>gate.util.SimpleFeatureMapImpl</mapType>
+                    <localMap>
+                      <entry>
+                        <string>sourceUrl</string>
+                        <gate.util.persistence.PersistenceManager-URLHolder>
+                          <urlString>$relpath$doc-tiny2.txt</urlString>
+                        </gate.util.persistence.PersistenceManager-URLHolder>
+                      </entry>
+                      <entry>
+                        <string>preserveOriginalContent</string>
+                        <boolean>false</boolean>
+                      </entry>
+                      <entry>
+                        <string>collectRepositioningInfo</string>
+                        <boolean>false</boolean>
+                      </entry>
+                      <entry>
+                        <string>markupAware</string>
+                        <boolean>true</boolean>
+                      </entry>
+                      <entry>
+                        <string>sourceUrlEndOffset</string>
+                        <null/>
+                      </entry>
+                      <entry>
+                        <string>stringContent</string>
+                        <string></string>
+                      </entry>
+                      <entry>
+                        <string>mimeType</string>
+                        <null/>
+                      </entry>
+                      <entry>
+                        <string>encoding</string>
+                        <string>UTF-8</string>
+                      </entry>
+                      <entry>
+                        <string>sourceUrlStartOffset</string>
+                        <null/>
+                      </entry>
+                    </localMap>
+                  </initParams>
+                </gate.util.persistence.LRPersistence>
+                <gate.util.persistence.LRPersistence>
+                  <resourceType>gate.corpora.DocumentImpl</resourceType>
+                  <resourceName>doc-tiny1.txt_0000F</resourceName>
+                  <initParams class="gate.util.persistence.MapPersistence">
+                    <mapType>gate.util.SimpleFeatureMapImpl</mapType>
+                    <localMap>
+                      <entry>
+                        <string>sourceUrl</string>
+                        <gate.util.persistence.PersistenceManager-URLHolder>
+                          <urlString>$relpath$doc-tiny1.txt</urlString>
+                        </gate.util.persistence.PersistenceManager-URLHolder>
+                      </entry>
+                      <entry>
+                        <string>preserveOriginalContent</string>
+                        <boolean>false</boolean>
+                      </entry>
+                      <entry>
+                        <string>collectRepositioningInfo</string>
+                        <boolean>false</boolean>
+                      </entry>
+                      <entry>
+                        <string>markupAware</string>
+                        <boolean>true</boolean>
+                      </entry>
+                      <entry>
+                        <string>sourceUrlEndOffset</string>
+                        <null/>
+                      </entry>
+                      <entry>
+                        <string>stringContent</string>
+                        <string></string>
+                      </entry>
+                      <entry>
+                        <string>mimeType</string>
+                        <null/>
+                      </entry>
+                      <entry>
+                        <string>encoding</string>
+                        <string>UTF-8</string>
+                      </entry>
+                      <entry>
+                        <string>sourceUrlStartOffset</string>
+                        <null/>
+                      </entry>
+                    </localMap>
+                  </initParams>
+                </gate.util.persistence.LRPersistence>
               </localList>
               <collectionType>java.util.ArrayList</collectionType>
             </gate.util.persistence.CollectionPersistence>
@@ -442,7 +581,6 @@
           <featureName></featureName>
           <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
-            <corpus class="gate.util.persistence.CorpusPersistence" reference="../../../../../corpus"/>
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
@@ -482,7 +620,7 @@
                 </entry>
                 <entry>
                   <string>corpus</string>
-                  <gate.util.persistence.CorpusPersistence reference="../../../../../../../../corpus"/>
+                  <null/>
                 </entry>
                 <entry>
                   <string>inputAnnotationSet</string>
@@ -497,18 +635,18 @@
                   <double>0.0</double>
                 </entry>
                 <entry>
-                  <string>inputAnnotationType1</string>
-                  <string>WordToken</string>
-                </entry>
-                <entry>
                   <string>pairStatsFileUrl</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
                     <urlString>$relpath$statsCollStats.tsv</urlString>
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
+                  <string>inputAnnotationType1</string>
+                  <string>WordToken</string>
+                </entry>
+                <entry>
                   <string>inputAnnotationType2</string>
-                  <string>PunctToken</string>
+                  <string>WordToken</string>
                 </entry>
                 <entry>
                   <string>sumsFileUrl</string>

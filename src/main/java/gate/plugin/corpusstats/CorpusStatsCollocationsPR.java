@@ -108,30 +108,16 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @CreoleParameter(
           comment = "The feature from the input annotation to use as term string, if left blank the document text",
           defaultValue = "")
-  public void setStringFeature1(String val) {
-    this.stringFeature1 = val;
+  public void setStringFeature(String val) {
+    this.stringFeature = val;
   }
 
-  public String getStringFeature1() {
-    return stringFeature1;
+  public String getStringFeature() {
+    return stringFeature;
   }
-  protected String stringFeature1 = "";
+  protected String stringFeature = "";
 
   
-    @RunTime
-  @Optional
-  @CreoleParameter(
-          comment = "The feature from the input annotation to use as term string, if left blank the document text",
-          defaultValue = "")
-  public void setStringFeature2(String val) {
-    this.stringFeature2 = val;
-  }
-
-  public String getStringFeature2() {
-    return stringFeature2;
-  }
-  protected String stringFeature2 = "";
-
   
   private URL pairStatsFileUrl;
 
@@ -256,17 +242,17 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   }
   
 
-  private int minContextsT2 = -1;
+  private int minContextsT2 = 1;
 
   @RunTime
   @Optional
   @CreoleParameter(
-          comment = "The minimum contexts number for a term or term1 to get considered, if -1 same as minContexts1",
-          defaultValue = "-1"
+          comment = "The minimum contexts number for a term2 to get considered, if term2 is used",
+          defaultValue = "1"
   )
   public void setMinContextsT2(Integer value) {
     if (value == null) {
-      minContextsT2 = -1;
+      minContextsT2 = 1;
     } else {
       minContextsT2 = value;
     }
@@ -282,7 +268,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   @Optional
   @CreoleParameter(
           comment = "The minimum contexts number for a pair to occur in",
-          defaultValue = "-1"
+          defaultValue = "1"
   )
   public void setMinContextsP(Integer value) {
     if (value == null) {
@@ -378,25 +364,6 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return laplaceCoefficient;
   }
   
-  private double dampeningCoefficient = 1.0;
-  @RunTime
-  @Optional
-  @CreoleParameter(
-          comment = "Coefficient used for dampening the term2 probability estimates. If 1.0, not used",
-          defaultValue = "1.0"
-  )
-  public void setDampeningCoefficient(Double value) {
-    if (value == null) {
-      dampeningCoefficient = 0.0;
-    } else {
-      dampeningCoefficient = value;
-    }
-  }
-
-  public Double getDampeningCoefficient() {
-    return laplaceCoefficient;
-  }
-  
 
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
@@ -413,10 +380,11 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   // and correctly case-folded
   private String getStringForAnn(Annotation ann) {
     String str = null;
-    if(getStringFeature1()==null || getStringFeature1().isEmpty()) {
+    
+    if(getStringFeature()==null || getStringFeature().isEmpty()) {
       str = gate.Utils.cleanStringFor(document, ann);
     } else {
-      str = (String)ann.getFeatures().get(getStringFeature1());
+      str = (String)ann.getFeatures().get(getStringFeature());
     }
     if(str==null) str="";
     if(!getCaseSensitive()) {
@@ -463,10 +431,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     AnnotationSet splitAnns = null;
     if(getSplitAnnotationType() != null && !getSplitAnnotationType().isEmpty()) {
       splitAnns = inputAS.get(getSplitAnnotationType());
-    }
-    
-    boolean haveTwoTypes = !inputType1.equals(inputType2);
-    
+    }       
 
     AnnotationSet containingAnns = null;
     if (spanAnnotationType == null || spanAnnotationType.isEmpty()) {
@@ -692,6 +657,16 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return document;
   }
 
+  /**
+   * Load a list of term frequencies for term 1. If a tf file is specified
+   * then a term1 is only considered at all if the tf found for it is at least
+   * the specified mintf.
+   */
+  protected void loadTfFile() {
+    throw new GateRuntimeException("ERROR tfFileUrl support not yet implemented");
+  }
+  
+  protected boolean haveTwoTypes = false;
 
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
@@ -711,6 +686,13 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     if(inputType2 == null || inputType1.isEmpty()) {
       inputType2 = inputType1;
     }
+    if(getMinContextsT2()==null) {
+      minContextsT2 = minContextsT1;
+    }
+    
+    if(tfFileUrl!=null) {
+      loadTfFile();
+    }
     
     // if reference null, create the global map
     synchronized (syncObject) {
@@ -727,6 +709,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         corpusStats.minContexts_t1 = getMinContextsT1();
         corpusStats.minContexts_t2 = getMinContextsT2();
         corpusStats.haveTwoTypes = !inputType1.equals(inputType2);
+        haveTwoTypes = corpusStats.haveTwoTypes;
+        corpusStats.laplaceCoefficient = getLaplaceCoefficient();
         sharedData.put("corpusStats", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
