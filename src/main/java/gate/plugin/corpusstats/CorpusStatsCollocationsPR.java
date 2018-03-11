@@ -27,9 +27,16 @@ package gate.plugin.corpusstats;
 
 import gate.*;
 import gate.api.AbstractDocumentProcessor;
+import gate.api.UrlUtils;
 import gate.creole.metadata.*;
 import gate.util.Benchmark;
+import gate.util.Files;
 import gate.util.GateRuntimeException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.zip.GZIPInputStream;
 
 @CreoleResource(name = "CorpusStatsCollocationsPR",
         helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsCollocationsPR",
@@ -550,7 +558,12 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         term1sForContext.clear();
         term2sForContext.clear();
         pairsForContext.clear();
+        
+        // TODO: we need to find out which contexts exactly to count!
+        // Currently we count contexts even if there is no pair or not even
+        // a term in them (if we filter by mintf)
         contexts += 1;
+        
         if(haveTwoTypes) {
           // If we have two term types, we need to iterate over type one in one loop
           // and type 2 in another and find and count separately. Also, in that 
@@ -566,6 +579,14 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
             String term = strings.get(k+m);
             int thetype = anntypes.get(k+m);
             if(thetype==1) { 
+              // NOTE: if we have two types then filtering by tf from the tfFile 
+              // is only done for the first term!
+              if(term2tf != null) {
+                Double term_tf = term2tf.get(term);
+                if(term_tf == null || term_tf < getMinTf()) {
+                  continue; 
+                }
+              }
               term1sForContext.add(term);              
               for (int n = 0; n < workingSlWSize; n++) {
                 if(thetype!=anntypes.get(k+n)) {
@@ -594,9 +615,21 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
           // find pairs by going through all strings following that string
           for (int m = 0; m < workingSlWSize; m++) {
             String term1 = strings.get(k+m);
+            if(term2tf != null ) {
+              Double term_tf = term2tf.get(term1);
+              if(term_tf == null || term_tf < getMinTf()) {
+                continue; 
+              }
+            }
             term1sForContext.add(term1);
             for (int n = m + 1; n < workingSlWSize; n++) {
               String term2 = strings.get(k+n);
+              if(term2tf != null ) {
+                Double term_tf = term2tf.get(term2);
+                if(term_tf == null || term_tf < getMinTf()) {
+                  continue; 
+                }
+              }              
               term1sForContext.add(term1);              
               if(term1.compareTo(term2) < 0) {
                 //System.out.print(term+"|"+term2+" ");
@@ -657,16 +690,66 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return document;
   }
 
+  
+  
   /**
    * Load a list of term frequencies for term 1. If a tf file is specified
    * then a term1 is only considered at all if the tf found for it is at least
    * the specified mintf.
    */
-  protected void loadTfFile() {
-    throw new GateRuntimeException("ERROR tfFileUrl support not yet implemented");
+  protected void loadTfFile(Map<String,Double> term2tf) {
+      boolean tryOpen = false;
+      boolean isGzip = tfFileUrl.toExternalForm().endsWith(".gz");
+      if (UrlUtils.isFile(tfFileUrl)) {
+        tryOpen = Files.fileFromURL(tfFileUrl).exists();
+      } else {
+        tryOpen = UrlUtils.exists(tfFileUrl);
+      }
+      if (tryOpen) {
+        try (
+                InputStream is = tfFileUrl.openStream();
+                InputStream gis = isGzip ? new GZIPInputStream(is) : is;
+                InputStreamReader isr = new InputStreamReader(is,"UTF-8");
+                BufferedReader in = new BufferedReader(isr);
+            ) {
+          String inline;
+          boolean isHeader = true;
+          int idxTerm = -1;
+          int idxTf = -1;
+          int rowNr = 0;
+          while((inline = in.readLine())!=null) {
+            rowNr += 1;
+            String[] fields = inline.split("\\t");
+            if(isHeader) {
+              isHeader = false;
+              // find the columns with header "term" and "tf" and remember
+              for(int i=0; i<fields.length; i++) {
+                if(fields[i].equals("term")) {
+                  idxTerm = i;
+                } else if(fields[i].equals("tf")) {
+                  idxTf = i;
+                }
+              }
+              if(idxTerm < 0 || idxTf < 0) {
+                throw new GateRuntimeException("TfIdfFile does not contain headers 'term' and 'tf'");
+              }
+            } else {
+              if(fields.length <= idxTerm || fields.length <= idxTf) {
+                throw new GateRuntimeException("TfIdf Row has not enough fields to find term and tf: "+rowNr);
+              }
+              String term = fields[idxTerm];
+              Double tf = Double.parseDouble(fields[idxTf]);
+              term2tf.put(term,tf);
+            }
+          }
+        } catch(Exception ex) {
+          throw new GateRuntimeException("Could not read tfIdfFile",ex);
+        }
+      }
   }
   
   protected boolean haveTwoTypes = false;
+  protected Map<String,Double> term2tf = null;
 
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
@@ -690,12 +773,21 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       minContextsT2 = minContextsT1;
     }
     
-    if(tfFileUrl!=null) {
-      loadTfFile();
-    }
     
     // if reference null, create the global map
     synchronized (syncObject) {
+      if(tfFileUrl!=null && !tfFileUrl.toExternalForm().isEmpty()) {
+        Map<String,Double> term2tf = (Map<String,Double>)sharedData.get("term2tf");
+        if(term2tf==null) {
+          term2tf = new HashMap<String,Double>();
+          loadTfFile(term2tf);
+          sharedData.put("term2tf",term2tf);
+          this.term2tf = term2tf;
+          System.out.println("INFO: loaded tf file, got terms: "+this.term2tf.size());
+        }
+        
+      }
+
       corpusStats = (CorpusStatsCollocationsData)sharedData.get("corpusStats");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
@@ -737,7 +829,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         // recreate or reload the data as if it was the first time
         //!!!corpusStats.map = null;
         corpusStats = null;
+        term2tf = null;
         sharedData.remove("corpusStats");
+        sharedData.remove("term2tf");
       } // if corpusstats is not null
       benchmarkCheckpoint(startTime, "__TfIdfSave");
     }

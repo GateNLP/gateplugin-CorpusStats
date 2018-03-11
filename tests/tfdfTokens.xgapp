@@ -589,15 +589,7 @@
                   <string>en</string>
                 </entry>
                 <entry>
-                  <string>dampeningCoefficient</string>
-                  <double>0.0</double>
-                </entry>
-                <entry>
-                  <string>stringFeature1</string>
-                  <string></string>
-                </entry>
-                <entry>
-                  <string>stringFeature2</string>
+                  <string>stringFeature</string>
                   <string></string>
                 </entry>
                 <entry>
