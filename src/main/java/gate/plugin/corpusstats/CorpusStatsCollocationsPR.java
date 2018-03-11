@@ -738,6 +738,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
                 throw new GateRuntimeException("TfIdf Row has not enough fields to find term and tf: "+rowNr);
               }
               String term = fields[idxTerm];
+              if(!getCaseSensitive()) {
+                term = term.toLowerCase(ccLocale);
+              }
               Double tf = Double.parseDouble(fields[idxTf]);
               term2tf.put(term,tf);
             }
