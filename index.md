@@ -3,7 +3,14 @@
 The CorpusStats plugin for the GATE NLP framework can be used to calculate 
 statistics for terms and term pairs over a corpus. 
 
-(The source code of this plugin is [available on GiHub](https://github.com/johann-petrak/gateplugin-CorpusStats))
+* get the [source code on GitHub](https://github.com/johann-petrak/gateplugin-CorpusStats)
+* download and install a [pre-built release](https://github.com/johann-petrak/gateplugin-CorpusStats/releases)
+* submit a [bug report or enhancement request](https://github.com/johann-petrak/gateplugin-CorpusStats/issues)
+* developer documentation and notes are in the [GitHub repository wiki](https://github.com/johann-petrak/gateplugin-CorpusStats/wiki)
+* Pull requests are welcome, but if you want to contribute, it may be better to get in touch first!
+  
+
+## Documentation
 
 For individual terms it can calculate:
 * Term frequency (tf), weighted and normalized term frequency
@@ -20,9 +27,5 @@ The plugin offers the following processing resources (PRs):
 * [CorpusStatsCollocationsPR](doc-CorpusStatsCollocationsPR) - the PR for gathering statistics for term pairs
 * [AssignStatsTfIdfPR](doc-AssignStatsTfIdfPR) - a PR for assigning single term statistics like tf\*idf to documents
 
-You can find the plugin and additional information:
-* [The GitHub source code repository](https://github.com/johann-petrak/gateplugin-CorpusStats)
-* [Release Downloads](https://github.com/johann-petrak/gateplugin-CorpusStats/releases)
-* [Documentation Wiki](https://github.com/johann-petrak/gateplugin-CorpusStats/wiki) (developer documentation)
 
 
