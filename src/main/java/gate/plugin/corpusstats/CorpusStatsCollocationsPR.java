@@ -778,7 +778,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     
     
     // if reference null, create the global map
-    synchronized (syncObject) {
+    // synchronized (syncObject) { // syncing done in caller
       if(tfFileUrl!=null && !tfFileUrl.toExternalForm().isEmpty()) {
         Map<String,Double> term2tf = (Map<String,Double>)sharedData.get("term2tf");
         if(term2tf==null) {
@@ -817,7 +817,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       if(getReuseExisting()) {
         corpusStats.load(dataFileUrl, sumsFileUrl, pairStatsFileUrl);
       }
-    }
+    // } // syncing done in caller
   }
 
   @Override
@@ -845,9 +845,10 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // After each run, we clean up, so that the code before each run can 
     // recreate or reload the data as if it was the first time
     synchronized (syncObject) {
-    //!!!corpusStats.map = null;
-    corpusStats = null;
-    sharedData.remove("corpusStats");
+      //!!!corpusStats.map = null;
+      corpusStats = null;
+      sharedData.remove("corpusStats");
+      sharedData.remove("term2tf");
     }
   }
 

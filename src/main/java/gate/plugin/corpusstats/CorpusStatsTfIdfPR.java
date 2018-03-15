@@ -348,7 +348,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
-    synchronized (syncObject) {
+    // synchronized (syncObject) {  // the syncing is now done in the calling execute()
       corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStatsTfIdf");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
@@ -371,7 +371,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       if(getReuseExisting()) {
         corpusStats.load(dataFileUrl, sumsFileUrl, tfDfFileUrl);
       }
-    }
+    // } // syncing
   }
 
   @Override
@@ -397,9 +397,9 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     // After each run, we clean up, so that the code before each run can 
     // recreate or reload the data as if it was the first time
     synchronized (syncObject) {
-    corpusStats.map = null;
-    corpusStats = null;
-    sharedData.remove("corpusStatsTfIdf");
+      corpusStats.map = null;
+      corpusStats = null;
+      sharedData.remove("corpusStatsTfIdf");
     }
   }
 
