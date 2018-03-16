@@ -228,7 +228,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
-  CorpusStatsTfIdfData corpusStats;
+  private CorpusStatsTfIdfData corpusStats;
   private static final Object syncObject = new Object();
 
   // fields local to each duplicated PR
@@ -239,6 +239,8 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   @Override
   protected Document process(Document document) {
 
+    if(corpusStats == null)
+      corpusStats = (CorpusStatsTfIdfData)getSharedData().get("corpusStatsTfIdf");
     AnnotationSet inputAS = null;
     if (inputASName == null
             || inputASName.isEmpty()) {
@@ -349,7 +351,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
     // synchronized (syncObject) {  // the syncing is now done in the calling execute()
-      corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStatsTfIdf");
+      corpusStats = (CorpusStatsTfIdfData)getSharedData().get("corpusStatsTfIdf");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
       } else {
@@ -360,7 +362,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
         corpusStats.nWords = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();
         corpusStats.ccLocale = new Locale(getCaseConversionLanguage());
-        sharedData.put("corpusStatsTfIdf", corpusStats);
+        getSharedData().put("corpusStatsTfIdf", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
       // Now at this point we have a CorpusStats instance for sure. However, 

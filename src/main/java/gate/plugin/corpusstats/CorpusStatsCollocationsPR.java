@@ -417,6 +417,15 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     //System.out.println("!!! DEBUG: processing document "+document.getName());
     fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
     
+    if(corpusStats == null) {
+      corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
+    }
+    if(term2tf == null) {
+      term2tf = (Map<String,Double>)getSharedData().get("term2tf");
+      corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
+    }
+    
+    
     AnnotationSet inputAS = null;
     if (inputASName == null
             || inputASName.isEmpty()) {
@@ -780,18 +789,18 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // if reference null, create the global map
     // synchronized (syncObject) { // syncing done in caller
       if(tfFileUrl!=null && !tfFileUrl.toExternalForm().isEmpty()) {
-        Map<String,Double> term2tf = (Map<String,Double>)sharedData.get("term2tf");
+        Map<String,Double> term2tf = (Map<String,Double>)getSharedData().get("term2tf");
         if(term2tf==null) {
           term2tf = new HashMap<String,Double>();
           loadTfFile(term2tf);
-          sharedData.put("term2tf",term2tf);
+          getSharedData().put("term2tf",term2tf);
           this.term2tf = term2tf;
           System.out.println("INFO: loaded tf file, got terms: "+this.term2tf.size());
         }
         
       }
 
-      corpusStats = (CorpusStatsCollocationsData)sharedData.get("corpusStats");
+      corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
       } else {
@@ -806,7 +815,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
         corpusStats.haveTwoTypes = !inputType1.equals(inputType2);
         haveTwoTypes = corpusStats.haveTwoTypes;
         corpusStats.laplaceCoefficient = getLaplaceCoefficient();
-        sharedData.put("corpusStats", corpusStats);
+        getSharedData().put("corpusStats", corpusStats);
         System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
       // Now at this point we have a CorpusStats instance for sure. However, 

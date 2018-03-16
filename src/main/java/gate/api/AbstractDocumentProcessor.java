@@ -110,7 +110,7 @@ public abstract class AbstractDocumentProcessor
   public Throwable getLastError() {
     return lastError;
   }
-    
+      
   protected ConcurrentHashMap<String,Object> sharedData = null;
   
   @Sharable
@@ -170,11 +170,10 @@ public abstract class AbstractDocumentProcessor
         System.err.println("DEBUG "+this.getName()+" Have 0 set 1, beforeFirstDocument, id="+duplicateId);
         beforeFirstDocument(controller);
       } else {
-        System.err.println("DEBUG "+this.getName()+" incrementing, id="+duplicateId);
+        //System.err.println("DEBUG "+this.getName()+" incrementing, id="+duplicateId);
         getSeenDocuments().incrementAndGet();
       }
     }
-    System.err.println("DEBUG "+this.getName()+" running process, id="+duplicateId);
     process(getDocument());
   }
 
