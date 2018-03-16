@@ -166,12 +166,15 @@ public abstract class AbstractDocumentProcessor
   @Override
   public void execute() throws ExecutionException {
     synchronized (syncObject) {
-      if (getSeenDocuments().get() == 0) {
-        System.err.println("DEBUG "+this.getName()+" Running beforeFirstDocument");
+      if(getSeenDocuments().compareAndSet(0, 1)) {
+        System.err.println("DEBUG "+this.getName()+" Have 0 set 1, beforeFirstDocument, id="+duplicateId);
         beforeFirstDocument(controller);
+      } else {
+        System.err.println("DEBUG "+this.getName()+" incrementing, id="+duplicateId);
+        getSeenDocuments().incrementAndGet();
       }
     }
-    getSeenDocuments().incrementAndGet();
+    System.err.println("DEBUG "+this.getName()+" running process, id="+duplicateId);
     process(getDocument());
   }
 
