@@ -268,7 +268,11 @@ public class CorpusStatsCollocationsData implements Serializable {
     double samplevariance = ret.p_a_b * (1.0 - ret.p_a_b);
     ret.student_t = (ret.p_a_b - ret.p_a_b_expected) / Math.sqrt(samplevariance / Nfloat);
 
-    ret.student_t_p = tdist.cumulativeProbability(ret.student_t);
+    if(tdist==null) {
+      ret.student_t_p = 0.0;
+    } else {
+      ret.student_t_p = tdist.cumulativeProbability(ret.student_t);
+    }
     return ret;
   }
 
