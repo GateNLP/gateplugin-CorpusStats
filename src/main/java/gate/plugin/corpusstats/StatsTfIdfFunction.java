@@ -21,10 +21,10 @@ public interface StatsTfIdfFunction {
    * @param tf - the local term frequency of the term in the current document
    * @param maxTf - the local maximum term frequency of any term in the current document
    * @param sumTf - the number of all terms in the current document
-   * @oaram options - a Map String to Object for additional parameters and settings that
+   * @param options - a Map String to Object for additional parameters and settings that
    * influence how the statistic should get calculated, this can also include any filtering 
    * thresholds/
-   * @return 
+   * @return TODO
    */
   public Double apply(TermStats t, long nDocs, long nTerms, long tf, long maxTf, long sumTf, Map<String,Object> options);
 }

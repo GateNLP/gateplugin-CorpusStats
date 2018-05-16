@@ -304,7 +304,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
    * NOTE: If a pipeline is run several times in a row, the stats are 
    * being reset to zero between runs if reuseExisting is false. 
    * 
-   * @param val 
+   * @param val  TODO
    */
   @RunTime
   @Optional

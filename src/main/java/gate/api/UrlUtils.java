@@ -38,8 +38,8 @@ public class UrlUtils {
   /**
    * Create a URL from the String.
    * If the String does not have a protocol/scheme, file:// is assumed and prepended.
-   * @param str
-   * @return 
+   * @param str TODO
+   * @return TODO
    */
   public static URL newURL(String str) {
     try {
@@ -59,11 +59,12 @@ public class UrlUtils {
    * for a URL and a name String. The catch is that in order for this to work,
    * the given dir URL must end in a slash. This method assumes that the first
    * URL always refers to a directory and therefore appends a slash if necessary.
-   * <p>
+   * 
    * Note: if the dirURL contains a query and/or a fragment, those parts are 
    * lost in the resulting URL.
-   * @param dir
-   * @param file 
+   * @param dirURL TODO
+   * @param fileName TODO
+   * @return  TODO
    */
   public static URL newURL(URL dirURL, String fileName) {
     URI dirURI;
@@ -96,8 +97,8 @@ public class UrlUtils {
   
   /**
    * Return the last path component of a hierarchical path of URL.
-   * @param url
-   * @return 
+   * @param url TODO
+   * @return  TODO
    */
   public static String getName(URL url) {
     URI uri;
@@ -127,6 +128,8 @@ public class UrlUtils {
    * This is the path, with the last component of the path removed, i.e.
    * with that part removed that is returned by the getName() method.
    * 
+   * @param url TODO
+   * @return  TODO
    */
   public static URL getParentURL(URL url) {
     URL ret;
@@ -143,6 +146,8 @@ public class UrlUtils {
    * This is the path, with the last component of the path removed, i.e.
    * with that part removed that is returned by the getName() method.
    * 
+   * @param url TODO
+   * @return  TODO
    */
   public static String getParent(URL url) {
     return getParentURL(url).toString();
@@ -151,8 +156,8 @@ public class UrlUtils {
   /** 
    * Returns true if the URL can be opened for reading.
    * 
-   * @param url
-   * @return 
+   * @param url TODO
+   * @return  TODO
    */
   public static boolean exists(URL url) {
     boolean ret = true;
@@ -166,8 +171,8 @@ public class UrlUtils {
   
   /**
    * Return truen if the URL is a file URL.
-   * @param url
-   * @return 
+   * @param url TODO
+   * @return TODO
    */
   public static boolean isFile(URL url) {
     return "file".equals(url.getProtocol());

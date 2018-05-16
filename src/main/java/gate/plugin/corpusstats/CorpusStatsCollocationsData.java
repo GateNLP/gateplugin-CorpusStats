@@ -180,7 +180,8 @@ public class CorpusStatsCollocationsData implements Serializable {
    * (Re-)calculate the statistics for some pair of terms and return them as an
    * instant of the PairStats class.
    *
-   * @return
+   * @param pair TODO
+   * @return TODO
    */
   public PairStats calcStats(String pair) {
     String[] terms = pair.split("\\t");
