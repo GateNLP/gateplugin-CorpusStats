@@ -419,7 +419,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
     }
     if(term2tf == null) {
-      term2tf = (Map<String,Double>)getSharedData().get("term2tf");
+      @SuppressWarnings("unchecked")
+      Map<String,Double>tmp = (Map<String,Double>)getSharedData().get("term2tf");
+      term2tf = tmp;
       corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
     }
     
@@ -789,6 +791,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // if reference null, create the global map
     // synchronized (syncObject) { // syncing done in caller
       if(tfFileUrl!=null && !tfFileUrl.toExternalForm().isEmpty()) {
+        @SuppressWarnings("unchecked")
         Map<String,Double> tmp_term2tf = (Map<String,Double>)getSharedData().get("term2tf");
         if(tmp_term2tf==null) {
           tmp_term2tf = new HashMap<>();
