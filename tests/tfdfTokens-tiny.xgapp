@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <gate.util.persistence.GateApplication>
   <urlList class="gate.util.persistence.CollectionPersistence">
     <localList>
@@ -18,7 +17,7 @@
         <version>8.5-SNAPSHOT</version>
       </gate.creole.Plugin-Maven>
     </localList>
-    <collectionType>java.util.ArrayList</collectionType>
+    <collectionType>java.util.Collections$UnmodifiableSet</collectionType>
   </urlList>
   <application class="gate.util.persistence.ConditionalSerialAnalyserControllerPersistence">
     <corpus class="gate.util.persistence.CorpusPersistence">
@@ -30,42 +29,18 @@
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
               <entry>
+                <string>encoding</string>
+                <string>UTF-8</string>
+              </entry>
+              <entry>
                 <string>sourceUrl</string>
                 <gate.util.persistence.PersistenceManager-URLHolder>
                   <urlString>$relpath$doc-tiny2.txt</urlString>
                 </gate.util.persistence.PersistenceManager-URLHolder>
               </entry>
               <entry>
-                <string>preserveOriginalContent</string>
-                <boolean>false</boolean>
-              </entry>
-              <entry>
-                <string>collectRepositioningInfo</string>
-                <boolean>false</boolean>
-              </entry>
-              <entry>
-                <string>markupAware</string>
-                <boolean>true</boolean>
-              </entry>
-              <entry>
-                <string>sourceUrlEndOffset</string>
-                <null />
-              </entry>
-              <entry>
                 <string>stringContent</string>
-                <string />
-              </entry>
-              <entry>
-                <string>mimeType</string>
-                <null />
-              </entry>
-              <entry>
-                <string>encoding</string>
-                <string>UTF-8</string>
-              </entry>
-              <entry>
-                <string>sourceUrlStartOffset</string>
-                <null />
+                <string></string>
               </entry>
             </localMap>
           </initParams>
@@ -77,42 +52,18 @@
             <mapType>gate.util.SimpleFeatureMapImpl</mapType>
             <localMap>
               <entry>
+                <string>encoding</string>
+                <string>UTF-8</string>
+              </entry>
+              <entry>
                 <string>sourceUrl</string>
                 <gate.util.persistence.PersistenceManager-URLHolder>
                   <urlString>$relpath$doc-tiny1.txt</urlString>
                 </gate.util.persistence.PersistenceManager-URLHolder>
               </entry>
               <entry>
-                <string>preserveOriginalContent</string>
-                <boolean>false</boolean>
-              </entry>
-              <entry>
-                <string>collectRepositioningInfo</string>
-                <boolean>false</boolean>
-              </entry>
-              <entry>
-                <string>markupAware</string>
-                <boolean>true</boolean>
-              </entry>
-              <entry>
-                <string>sourceUrlEndOffset</string>
-                <null />
-              </entry>
-              <entry>
                 <string>stringContent</string>
-                <string />
-              </entry>
-              <entry>
-                <string>mimeType</string>
-                <null />
-              </entry>
-              <entry>
-                <string>encoding</string>
-                <string>UTF-8</string>
-              </entry>
-              <entry>
-                <string>sourceUrlStartOffset</string>
-                <null />
+                <string></string>
               </entry>
             </localMap>
           </initParams>
@@ -127,8 +78,8 @@
             <string>documentsList</string>
             <gate.util.persistence.CollectionPersistence>
               <localList>
-                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence" />
-                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence[2]" />
+                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence"/>
+                <gate.util.persistence.LRPersistence reference="../../../../../../docList/gate.util.persistence.LRPersistence[2]"/>
               </localList>
               <collectionType>java.util.ArrayList</collectionType>
             </gate.util.persistence.CollectionPersistence>
@@ -140,76 +91,33 @@
       <localList>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
-          <pr class="gate.util.persistence.PRPersistence">
+          <featureName></featureName>
+          <featureValue></featureValue>
+          <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap>
-                <entry>
-                  <string>setsToKeep</string>
-                  <gate.util.persistence.CollectionPersistence>
-                    <localList>
-                      <string>Key</string>
-                    </localList>
-                    <collectionType>java.util.ArrayList</collectionType>
-                  </gate.util.persistence.CollectionPersistence>
-                </entry>
-                <entry>
-                  <string>keepOriginalMarkupsAS</string>
-                  <boolean>true</boolean>
-                </entry>
-                <entry>
-                  <string>corpus</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>setsToRemove</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>annotationTypes</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-              </localMap>
+              <localMap/>
             </runtimeParams>
             <resourceType>gate.creole.annotdelete.AnnotationDeletePR</resourceType>
             <resourceName>Document Reset PR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
+          <featureName></featureName>
+          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap>
-                <entry>
-                  <string>annotationSetName</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>corpus</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-              </localMap>
+              <localMap/>
             </runtimeParams>
             <resourceType>gate.creole.tokeniser.DefaultTokeniser</resourceType>
             <resourceName>ANNIE English Tokeniser</resourceName>
@@ -217,117 +125,48 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
                   <string>tokeniserRulesURL</string>
                   <gate.util.persistence.PersistenceManager-RRPersistence>
                     <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/tokeniser/AlternateTokeniser.rules</uriString>
                   </gate.util.persistence.PersistenceManager-RRPersistence>
                 </entry>
-                <entry>
-                  <string>transducerGrammarURL</string>
-                  <gate.util.persistence.PersistenceManager-RRPersistence>
-                    <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/tokeniser/postprocess.jape</uriString>
-                  </gate.util.persistence.PersistenceManager-RRPersistence>
-                </entry>
               </localMap>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
+          <featureName></featureName>
+          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap>
-                <entry>
-                  <string>corpus</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>outputASName</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>inputASName</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-              </localMap>
+              <localMap/>
             </runtimeParams>
             <resourceType>gate.creole.splitter.SentenceSplitter</resourceType>
             <resourceName>ANNIE Sentence Splitter 0000A</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap>
-                <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
-                  <string>gazetteerListsURL</string>
-                  <gate.util.persistence.PersistenceManager-RRPersistence>
-                    <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/sentenceSplitter/gazetteer/lists.def</uriString>
-                  </gate.util.persistence.PersistenceManager-RRPersistence>
-                </entry>
-                <entry>
-                  <string>transducerURL</string>
-                  <gate.util.persistence.PersistenceManager-RRPersistence>
-                    <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/sentenceSplitter/grammar/main-single-nl.jape</uriString>
-                  </gate.util.persistence.PersistenceManager-RRPersistence>
-                </entry>
-              </localMap>
+              <localMap/>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
+          <featureName></featureName>
+          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap>
-                <entry>
-                  <string>enableDebugging</string>
-                  <boolean>false</boolean>
-                </entry>
-                <entry>
-                  <string>corpus</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>outputASName</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>inputASName</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>ontology</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-              </localMap>
+              <localMap/>
             </runtimeParams>
             <resourceType>gate.creole.Transducer</resourceType>
             <resourceName>JAPE Transducer 0000D</resourceName>
@@ -335,73 +174,27 @@
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
                 <entry>
-                  <string>binaryGrammarURL</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>annotationAccessors</string>
-                  <null />
-                </entry>
-                <entry>
                   <string>grammarURL</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$wordtoken.jape</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>encoding</string>
-                  <string>UTF-8</string>
-                </entry>
-                <entry>
-                  <string>operators</string>
-                  <null />
+                  <gate.util.persistence.PersistenceManager-RRPersistence>
+                    <uriString>$relpath$wordtoken.jape</uriString>
+                  </gate.util.persistence.PersistenceManager-RRPersistence>
                 </entry>
               </localMap>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
+          <featureName></featureName>
+          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
-                <entry>
-                  <string>caseConversionLanguage</string>
-                  <string>en</string>
-                </entry>
-                <entry>
-                  <string>caseSensitive</string>
-                  <boolean>true</boolean>
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>dataFileUrl</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$statsTfIdfData.ser</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>corpus</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>keyFeature</string>
-                  <string />
-                </entry>
-                <entry>
-                  <string>inputAnnotationSet</string>
-                  <string />
-                </entry>
                 <entry>
                   <string>sumsFileUrl</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
@@ -419,16 +212,8 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
-                  <string>minTf</string>
-                  <int>1</int>
-                </entry>
-                <entry>
-                  <string>reuseExisting</string>
+                  <string>caseSensitive</string>
                   <boolean>false</boolean>
-                </entry>
-                <entry>
-                  <string>containingAnnotationType</string>
-                  <string />
                 </entry>
               </localMap>
             </runtimeParams>
@@ -436,65 +221,22 @@
             <resourceName>CorpusStatsTfIdfPR</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
         <gate.util.persistence.AnalyserRunningStrategyPersistence>
           <runMode>1</runMode>
-          <featureName />
-          <featureValue />
+          <featureName></featureName>
+          <featureValue></featureValue>
           <pr class="gate.util.persistence.LanguageAnalyserPersistence">
-            <corpus class="gate.util.persistence.CorpusPersistence" reference="../../../../../corpus" />
             <runtimeParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
               <localMap>
-                <entry>
-                  <string>caseConversionLanguage</string>
-                  <string>en</string>
-                </entry>
-                <entry>
-                  <string>caseSensitive</string>
-                  <boolean>false</boolean>
-                </entry>
-                <entry>
-                  <string>document</string>
-                  <null />
-                </entry>
-                <entry>
-                  <string>stringFeature</string>
-                  <string />
-                </entry>
-                <entry>
-                  <string>minContextsP</string>
-                  <int>-1</int>
-                </entry>
-                <entry>
-                  <string>dataFileUrl</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$statsCollData.ser</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>corpus</string>
-                  <gate.util.persistence.CorpusPersistence reference="../../../../../../../../corpus" />
-                </entry>
-                <entry>
-                  <string>inputAnnotationSet</string>
-                  <string />
-                </entry>
-                <entry>
-                  <string>splitAnnotationType</string>
-                  <string />
-                </entry>
-                <entry>
-                  <string>laplaceCoefficient</string>
-                  <double>0.0</double>
-                </entry>
                 <entry>
                   <string>pairStatsFileUrl</string>
                   <gate.util.persistence.PersistenceManager-URLHolder>
@@ -516,12 +258,12 @@
                   </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
-                  <string>minTf</string>
-                  <double>0.0</double>
+                  <string>caseSensitive</string>
+                  <boolean>false</boolean>
                 </entry>
                 <entry>
-                  <string>reuseExisting</string>
-                  <boolean>false</boolean>
+                  <string>minContextsP</string>
+                  <int>-1</int>
                 </entry>
                 <entry>
                   <string>slidingWindowSize</string>
@@ -532,18 +274,8 @@
                   <int>-1</int>
                 </entry>
                 <entry>
-                  <string>minContextsT1</string>
-                  <int>1</int>
-                </entry>
-                <entry>
-                  <string>tfFileUrl</string>
-                  <gate.util.persistence.PersistenceManager-URLHolder>
-                    <urlString>$relpath$tffile.tsv</urlString>
-                  </gate.util.persistence.PersistenceManager-URLHolder>
-                </entry>
-                <entry>
-                  <string>spanAnnotationType</string>
-                  <string>Sentence</string>
+                  <string>splitAnnotationType</string>
+                  <string></string>
                 </entry>
               </localMap>
             </runtimeParams>
@@ -551,11 +283,11 @@
             <resourceName>CorpusStatsCollocationsPR 0000E</resourceName>
             <initParams class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </initParams>
             <features class="gate.util.persistence.MapPersistence">
               <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-              <localMap />
+              <localMap/>
             </features>
           </pr>
         </gate.util.persistence.AnalyserRunningStrategyPersistence>
@@ -564,12 +296,12 @@
     </strategiesList>
     <prList class="gate.util.persistence.CollectionPersistence">
       <localList>
-        <gate.util.persistence.PRPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence/pr" />
-        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[2]/pr" />
-        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[3]/pr" />
-        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[4]/pr" />
-        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[5]/pr" />
-        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[6]/pr" />
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence/pr"/>
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[2]/pr"/>
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[3]/pr"/>
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[4]/pr"/>
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[5]/pr"/>
+        <gate.util.persistence.LanguageAnalyserPersistence reference="../../../strategiesList/localList/gate.util.persistence.AnalyserRunningStrategyPersistence[6]/pr"/>
       </localList>
       <collectionType>java.util.ArrayList</collectionType>
     </prList>
@@ -577,12 +309,11 @@
     <resourceName>tfdfTokens</resourceName>
     <initParams class="gate.util.persistence.MapPersistence">
       <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-      <localMap />
+      <localMap/>
     </initParams>
     <features class="gate.util.persistence.MapPersistence">
       <mapType>gate.util.SimpleFeatureMapImpl</mapType>
-      <localMap />
+      <localMap/>
     </features>
   </application>
 </gate.util.persistence.GateApplication>
-

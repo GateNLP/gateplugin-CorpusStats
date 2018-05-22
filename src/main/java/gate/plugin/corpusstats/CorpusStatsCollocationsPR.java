@@ -95,6 +95,22 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return inputType2;
   }
 
+  
+  protected Boolean orderIsSignificant = false;
+  @RunTime
+  @Optional
+  @CreoleParameter(
+          comment = "If true, then the pair order is kept and word1 followed by word2 is different than word2 followed by word1",
+          defaultValue = "False")
+  public void setOrderIsSignificant(Boolean val) {
+    this.orderIsSignificant = val;
+  }
+
+  public Boolean getOrderIsSignificant() {
+    return orderIsSignificant;
+  }
+  
+  
   @RunTime
   @Optional
   @CreoleParameter(
@@ -639,7 +655,14 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
                   continue; 
                 }
               }              
-              term1sForContext.add(term1);              
+              term1sForContext.add(term1);  
+              if(getOrderIsSignificant()) {
+                // NOTE: for now we do not add pairs of identical words because of 
+                // the difficulty to find a counts for chi2 by inclusion/exclusion
+                if(!term1.equals(term2)) {
+                  pairsForContext.add(term1+"\t"+term2);
+                }
+              } else {
               if(term1.compareTo(term2) < 0) {
                 //System.out.print(term+"|"+term2+" ");
                 pairsForContext.add(term1+"\t"+term2);
@@ -651,7 +674,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
                 // We could but then we would need to find out how to calculate
                 // the counts for chi2 properly since inclusion/exclusion only
                 // works for different terms in the pair
-              }                            
+              }       
+              }
             } // inner for: m
           } // outer for: n
           //System.out.println("DEBUG: term1s for context: "+term1sForContext);
