@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.LongAdder;
  * @author Johann Petrak
  */
 public class TermStats implements Serializable {
+
+  private static final long serialVersionUID = -5075722602609027484L;
   
   private final LongAdder tf = new LongAdder();
   private final DoubleAdder wtf = new DoubleAdder(); // weighted tf: by document length

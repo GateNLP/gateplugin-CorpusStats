@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 @CreoleResource(name = "CorpusStatsTfIdfPR",
-        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsTfIdfPR",
+        helpURL = "https://gatenlp.github.io/gateplugin-CorpusStats/doc-CorpusStatsTfIdfPR",
         comment = "Calculate tf, df, and additional statistics over a corpus")
 public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
@@ -241,7 +241,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
     if(corpusStats == null)
       corpusStats = (CorpusStatsTfIdfData)getSharedData().get("corpusStatsTfIdf");
-    AnnotationSet inputAS = null;
+    AnnotationSet inputAS;
     if (inputASName == null
             || inputASName.isEmpty()) {
       inputAS = document.getAnnotations();
@@ -249,7 +249,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       inputAS = document.getAnnotations(inputASName);
     }
 
-    AnnotationSet inputAnns = null;
+    AnnotationSet inputAnns;
     if (inputType == null || inputType.isEmpty()) {
       throw new GateRuntimeException("Input annotation type must not be empty!");
     }
@@ -267,7 +267,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
-    HashMap<String, Integer> wordcounts = new HashMap<String, Integer>();
+    HashMap<String, Integer> wordcounts = new HashMap<>();
 
     long startTime = Benchmark.startPoint();
 
@@ -357,7 +357,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       } else {
         System.err.println("INFO: creating corpusStats in duplicate " + duplicateId + " of PR " + this.getName());
         corpusStats = new CorpusStatsTfIdfData();
-        corpusStats.map = new ConcurrentHashMap<String, TermStats>(1024 * 1024, 32, 32);
+        corpusStats.map = new ConcurrentHashMap<>(1024 * 1024, 32, 32);
         corpusStats.nDocs = new LongAdder();
         corpusStats.nWords = new LongAdder();
         corpusStats.isCaseSensitive = getCaseSensitive();

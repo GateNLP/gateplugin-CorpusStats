@@ -30,6 +30,8 @@ import java.util.zip.GZIPOutputStream;
  * @author Johann Petrak
  */
 public class CorpusStatsTfIdfData implements Serializable {
+
+  private static final long serialVersionUID = 8999291900287145505L;
   public ConcurrentHashMap<String, TermStats> map;
   public LongAdder nDocs = null;
   public LongAdder nWords = null;  
@@ -66,8 +68,6 @@ public class CorpusStatsTfIdfData implements Serializable {
             if(!ccLocale.equals(other.ccLocale)) {
               throw new GateRuntimeException("Data file loaded has a different case conversion language");
             }
-            other = null;
-            return;
           }
         } catch(Exception ex) {
           throw new GateRuntimeException("Error when trying to restore data from "+dataUrl,ex);

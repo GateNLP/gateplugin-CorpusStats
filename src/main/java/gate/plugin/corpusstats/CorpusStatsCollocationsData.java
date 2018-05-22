@@ -32,6 +32,8 @@ import org.apache.commons.math3.distribution.ChiSquaredDistribution;
  * @author Johann Petrak
  */
 public class CorpusStatsCollocationsData implements Serializable {
+
+  private static final long serialVersionUID = -1705307412318883426L;
   // The way we count is this: 
   // * for each context, totalContexts is incremented
   // * each time a term is encountered (one or more times) in a context, the countsTerms(t) is incremented
@@ -46,11 +48,11 @@ public class CorpusStatsCollocationsData implements Serializable {
   // the value of each metric should be for this. Maybe add this to the sum file if it depends on 
   // the number of pairs, contexts etc.!!!!
   public ConcurrentHashMap<String, LongAdder> countsTerms1
-          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t1)
+          = new ConcurrentHashMap<>(); // used to estimate p(t1)
   public ConcurrentHashMap<String, LongAdder> countsTerms2
-          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t2) if different types
+          = new ConcurrentHashMap<>(); // used to estimate p(t2) if different types
   public ConcurrentHashMap<String, LongAdder> countsPairs
-          = new ConcurrentHashMap<String, LongAdder>(); // used to estimate p(t1,t2)
+          = new ConcurrentHashMap<>(); // used to estimate p(t1,t2)
   // total number of single term occurrences, used to estimate p(t) 
   public LongAdder totalContexts = new LongAdder();
   
@@ -110,8 +112,6 @@ public class CorpusStatsCollocationsData implements Serializable {
             if (!ccLocale.equals(other.ccLocale)) {
               throw new GateRuntimeException("Data file loaded has a different case conversion language");
             }
-            other = null;
-            return;
           }
         } catch (Exception ex) {
           throw new GateRuntimeException("Error when trying to restore data from " + dataUrl, ex);

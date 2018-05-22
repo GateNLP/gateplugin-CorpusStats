@@ -33,10 +33,8 @@ import gate.util.Benchmark;
 import gate.util.Files;
 import gate.util.GateRuntimeException;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,8 +46,8 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.zip.GZIPInputStream;
 
 @CreoleResource(name = "CorpusStatsCollocationsPR",
-        helpURL = "https://github.com/johann-petrak/gateplugin-CorpusStats/wiki/CorpusStatsCollocationsPR",
-        comment = "Calculate pairwise statistics like PMI ")
+        helpURL = "https://gatenlp.github.io/gateplugin-CorpusStats/doc-CorpusStatsCollocationsPR",
+        comment = "Calculate pairwise statistics like PMI")
 public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
   private static final long serialVersionUID = 1L;
@@ -387,7 +385,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   // Helper method: get the string for an annotation, from the right source
   // and correctly case-folded
   private String getStringForAnn(Annotation ann) {
-    String str = null;
+    String str;
     
     if(getStringFeature()==null || getStringFeature().isEmpty()) {
       str = gate.Utils.cleanStringFor(document, ann);
@@ -426,7 +424,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     }
     
     
-    AnnotationSet inputAS = null;
+    AnnotationSet inputAS;
     if (inputASName == null
             || inputASName.isEmpty()) {
       inputAS = document.getAnnotations();
@@ -434,13 +432,13 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       inputAS = document.getAnnotations(inputASName);
     }
 
-    AnnotationSet inputAnns = null;
+    AnnotationSet inputAnns;
     // TODO: BEGIN move to run init code
     if (inputType1 == null || inputType1.isEmpty()) {
       throw new GateRuntimeException("Input annotation type must not be empty!");
     }
     // if we have a split annotation type defined, we also need to find those    
-    HashSet<String> inputTypes = new HashSet<String>();
+    HashSet<String> inputTypes = new HashSet<>();
     inputTypes.add(inputType1);    
     inputTypes.add(inputType2);    
     inputAnns = inputAS.get(inputTypes);
@@ -461,9 +459,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // we first do the counting locally then add everythin to the global map.
     // So we need to count terms, pairs and contexts. 
     // term2counts is only used if we have different types
-    HashMap<String, Integer> term1counts = new HashMap<String, Integer>();
-    HashMap<String, Integer> term2counts = new HashMap<String, Integer>();
-    HashMap<String, Integer> paircounts = new HashMap<String, Integer>();
+    HashMap<String, Integer> term1counts = new HashMap<>();
+    HashMap<String, Integer> term2counts = new HashMap<>();
+    HashMap<String, Integer> paircounts = new HashMap<>();
     int contexts = 0;
 
     long startTime = Benchmark.startPoint();
@@ -475,8 +473,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // process first. If we also do sliding windows, then that logic is done 
     // separately for the spans
     
-    List<Long> spanFromOffsets = new ArrayList<Long>();
-    List<Long> spanToOffsets = new ArrayList<Long>();
+    List<Long> spanFromOffsets = new ArrayList<>();
+    List<Long> spanToOffsets = new ArrayList<>();
     
     if(containingAnns == null || containingAnns.isEmpty()) {
       spanFromOffsets.add(0L);
@@ -523,9 +521,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     
     // we re-use these sets for every context to figure out which unique
     // pairs and terms we find in the context.
-    HashSet<String> term1sForContext = new HashSet<String>();
-    HashSet<String> term2sForContext = new HashSet<String>();
-    HashSet<String> pairsForContext = new HashSet<String>();
+    HashSet<String> term1sForContext = new HashSet<>();
+    HashSet<String> term2sForContext = new HashSet<>();
+    HashSet<String> pairsForContext = new HashSet<>();
 
     for(int i=0;i<spanFromOffsets.size();i++) {
       long fromOffset = spanFromOffsets.get(i);
@@ -536,8 +534,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       
       // we have a span to process. We do this by extracting the strings 
       // and processing by string index now, instead of using offsets any more
-      List<String> strings = new ArrayList<String>();           
-      List<Integer> anntypes = new ArrayList<Integer>();
+      List<String> strings = new ArrayList<>();           
+      List<Integer> anntypes = new ArrayList<>();
 
       for (Annotation ann : inAnns) {
         strings.add(getStringForAnn(ann));
@@ -705,6 +703,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
    * Load a list of term frequencies for term 1. If a tf file is specified
    * then a term1 is only considered at all if the tf found for it is at least
    * the specified mintf.
+   * @param term2tf a pre-allocated map from term to frequency which will get 
+   * filled
    */
   protected void loadTfFile(Map<String,Double> term2tf) {
       boolean tryOpen = false;
@@ -789,12 +789,12 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     // if reference null, create the global map
     // synchronized (syncObject) { // syncing done in caller
       if(tfFileUrl!=null && !tfFileUrl.toExternalForm().isEmpty()) {
-        Map<String,Double> term2tf = (Map<String,Double>)getSharedData().get("term2tf");
-        if(term2tf==null) {
-          term2tf = new HashMap<String,Double>();
-          loadTfFile(term2tf);
-          getSharedData().put("term2tf",term2tf);
-          this.term2tf = term2tf;
+        Map<String,Double> tmp_term2tf = (Map<String,Double>)getSharedData().get("term2tf");
+        if(tmp_term2tf==null) {
+          tmp_term2tf = new HashMap<>();
+          loadTfFile(tmp_term2tf);
+          getSharedData().put("term2tf",tmp_term2tf);
+          this.term2tf = tmp_term2tf;
           System.out.println("INFO: loaded tf file, got terms: "+this.term2tf.size());
         }
         
