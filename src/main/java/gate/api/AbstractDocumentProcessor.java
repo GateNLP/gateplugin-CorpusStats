@@ -45,6 +45,8 @@ public abstract class AbstractDocumentProcessor
         extends AbstractLanguageAnalyser
         implements Serializable, ControllerAwarePR, Benchmarkable {
 
+  private static final long serialVersionUID = -4097016880446371085L;
+
   /**
    *
    */
