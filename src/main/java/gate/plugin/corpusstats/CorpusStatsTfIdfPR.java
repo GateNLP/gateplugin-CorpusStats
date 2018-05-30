@@ -1,8 +1,8 @@
 /* 
- * Copyright (C) 2015-2016 The University of Sheffield.
+ * Copyright (C) 2015-2018 The University of Sheffield.
  *
  * This file is part of gateplugin-CorpusStats
- * (see https://github.com/johann-petrak/gateplugin-CorpusStats)
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -127,7 +127,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     return caseSensitive;
   }
   
-  Locale ccLocale = new Locale("en");
+  private Locale ccLocale = new Locale("en");
   private String caseConversionLanguage = "en";
   @RunTime
   @CreoleParameter(comment = "Language for mapping to lower case, only relevant if caseSensitive=false",
@@ -229,7 +229,6 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
   private CorpusStatsTfIdfData corpusStats;
-  private static final Object syncObject = new Object();
 
   // fields local to each duplicated PR
   private int mostFrequentWordFreq = 0;
@@ -239,8 +238,9 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   @Override
   protected Document process(Document document) {
 
-    if(corpusStats == null)
+    if(corpusStats == null) {
       corpusStats = (CorpusStatsTfIdfData)getSharedData().get("corpusStatsTfIdf");
+    }
     AnnotationSet inputAS;
     if (inputASName == null
             || inputASName.isEmpty()) {
@@ -299,8 +299,8 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     // also add the weighted/normalized term frequencies
     for (String key : wordcounts.keySet()) {
       corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementTfBy(wordcounts.get(key));
-      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(((double) wordcounts.get(key)) / ((double) documentWordFreq));
-      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(((double) wordcounts.get(key)) / ((double) mostFrequentWordFreq));
+      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementWTfBy(wordcounts.get(key) / ((double) documentWordFreq));
+      corpusStats.map.computeIfAbsent(key, (k -> new TermStats())).incrementNTfBy(wordcounts.get(key) / ((double) mostFrequentWordFreq));
     }
 
     corpusStats.nDocs.add(1);
@@ -378,7 +378,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
   @Override
   protected void afterLastDocument(Controller ctrl, Throwable t) {
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       long startTime = Benchmark.startPoint();
       // TODO: we had this here, but why do we need it?
       corpusStats = (CorpusStatsTfIdfData) sharedData.get("corpusStatsTfIdf");
@@ -398,7 +398,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
   protected void finishedNoDocument(Controller ctrl, Throwable t) {
     // After each run, we clean up, so that the code before each run can 
     // recreate or reload the data as if it was the first time
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       corpusStats.map = null;
       corpusStats = null;
       sharedData.remove("corpusStatsTfIdf");

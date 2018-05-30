@@ -1,8 +1,8 @@
 /* 
- * Copyright (C) 2015-2016 The University of Sheffield.
+ * Copyright (C) 2015-2018 The University of Sheffield.
  *
  * This file is part of gateplugin-CorpusStats
- * (see https://github.com/johann-petrak/gateplugin-CorpusStats)
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -50,7 +50,7 @@ public abstract class AbstractDocumentProcessor
   /**
    *
    */
-  private Logger logger = Logger.getLogger(AbstractDocumentProcessor.class.getCanonicalName());
+  private final Logger logger = Logger.getLogger(AbstractDocumentProcessor.class.getCanonicalName());
 
   
   // This will be shared between all duplicates
@@ -68,7 +68,7 @@ public abstract class AbstractDocumentProcessor
   protected Controller controller;
 
   
-  private static final Object syncObject = new Object();
+  protected static final Object SYNC_OBJECT = new Object();
   
   // because the setter for this is marked @Sharable, all duplicates will hold 
   // the same reference after initialisation. This is updated in init() and remains 
@@ -147,12 +147,12 @@ public abstract class AbstractDocumentProcessor
     // we always provide the following fields to all PRs which are used for duplicated PRs:
     // nDuplicates is an AtomicInt which gets incremented whenever a resource
     // gets duplicated. 
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       if(getNDuplicates() == null || getNDuplicates().get() == 0) {        
         System.err.println("DEBUG: creating first instance of PR "+this.getName());
         setNDuplicates(new AtomicInteger(1));
         duplicateId = 0;
-        setSharedData(new ConcurrentHashMap<String,Object>());
+        setSharedData(new ConcurrentHashMap<>());
         setSeenDocuments(new AtomicInteger(0));
         setRemainingDuplicates(new AtomicInteger(0));        
         System.err.println("DEBUG: "+this.getName()+" created duplicate "+duplicateId);
@@ -167,7 +167,7 @@ public abstract class AbstractDocumentProcessor
 
   @Override
   public void execute() throws ExecutionException {
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       if(getSeenDocuments().compareAndSet(0, 1)) {
         System.err.println("DEBUG "+this.getName()+" Have 0 set 1, beforeFirstDocument, id="+duplicateId);
         beforeFirstDocument(controller);
@@ -249,31 +249,38 @@ public abstract class AbstractDocumentProcessor
    * PRs could be made to not process filtered documents and to process
    * additional generated documents. 
    * 
-   * @param document  TODO
-   * @return TODO
+   * @param document  the document to get processed
+   * @return the processed document, usually identical to the one passed
    * 
    */
   protected abstract Document process(Document document);
 
   /**
-   * This can be overridden in PRs and will be run once before
-   * the first document seen. 
+   * Method that runs before the first document is being processed by a controller.
+   * 
    * This method is not called if no documents are processed at all. 
-   * @param ctrl  TODO
+   * 
+   * @param ctrl  the controller that is going to be run on the documents
    */
   protected abstract void beforeFirstDocument(Controller ctrl);
-
-  /**
-   * This can be overridden in PRs and will be run after processing has started.
-   * This will run once before any document is processed and before the method
-   * beforeFirstDocument is invoked, even if no document is being processed at all.
-   * 
-   * @param ctrl  TODO
-   */
-  protected void processingStarted(Controller ctrl) { };
   
+  /**
+   * Method that runs after the last Document is run by that controller. 
+   * 
+   * This method is not called if there are no documents. 
+   * 
+   * @param ctrl the controller that has been run
+   * @param t any throwable if an error occurred, otherwise null
+   */
   protected abstract void afterLastDocument(Controller ctrl, Throwable t);
 
+  /**
+   * Method that runs when a controller finishes but no documents were processed.
+   * 
+   * 
+   * @param ctrl the controller
+   * @param t any throwable if an error occurred, otherwise null
+   */
   protected abstract void finishedNoDocument(Controller ctrl, Throwable t);
   
   protected void benchmarkCheckpoint(long startTime, String name) {
@@ -296,23 +303,4 @@ public abstract class AbstractDocumentProcessor
   }
   private String benchmarkId = this.getName();
 
-  
-  
-  
-  
-  
-  /**
-   * Implement high-level API functions that can be used without importing
-   * anything.
-   * @param methodName
-   * @param parms
-   * @return 
-   */
-  // TODO: not yet, we will implement this once we removed the requirement to
-  // be compatible with Java 7
-  /*
-  protected Optional<Object> call(String methodName, Object... parms) {
-    return Optional.empty();
-  }
-  */
 }

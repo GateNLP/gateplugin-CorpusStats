@@ -1,7 +1,21 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (C) 2015-2018 The University of Sheffield.
+ *
+ * This file is part of gateplugin-CorpusStats
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
 package gate.plugin.corpusstats;
 
@@ -43,7 +57,7 @@ public class CorpusStatsTfIdfData implements Serializable {
     if(dataUrl != null && !dataUrl.toExternalForm().isEmpty()) {
       // if it is a file URL, convert and check if it exists, if it is not
       // a file URL, check if we can open it. 
-      boolean tryOpen  = false;
+      boolean tryOpen;
       if(UrlUtils.isFile(dataUrl)) {
         tryOpen = Files.fileFromURL(dataUrl).exists();
       } else {
@@ -130,7 +144,7 @@ public class CorpusStatsTfIdfData implements Serializable {
               long df = this.map.get(key).getDf();
               double ntf = this.map.get(key).getNTf();
               double wtf = this.map.get(key).getWTf();
-              double idf = 1.0 + Math.log((((double) ndocs + 1.0)) / (df + 1.0));
+              double idf = 1.0 + Math.log(((ndocs + 1.0)) / (df + 1.0));
               double tfidf = tf * idf;
               double ntfidf = ntf * idf;
               double wtfidf = wtf * idf;

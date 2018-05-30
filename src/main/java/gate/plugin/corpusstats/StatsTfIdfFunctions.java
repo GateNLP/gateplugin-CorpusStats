@@ -1,7 +1,21 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (C) 2015-2018 The University of Sheffield.
+ *
+ * This file is part of gateplugin-CorpusStats
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
 package gate.plugin.corpusstats;
 
@@ -17,7 +31,7 @@ import java.util.Map;
  * @author Johann Petrak
  */
 public class StatsTfIdfFunctions {
-  private static final Map<String,StatsTfIdfFunction> name2function = new HashMap<String,StatsTfIdfFunction>();
+  private static final Map<String,StatsTfIdfFunction> NAME2FUNCTION = new HashMap<String,StatsTfIdfFunction>();
   static {
     // Our default idf prevents division by zero by adding one to the DF and one to the nDocs
     // (if we would not add 1 to nDocs, the quotient could become smaller than 1 and the logarithm
@@ -26,71 +40,71 @@ public class StatsTfIdfFunctions {
     // this is a strict lower bound/
     StatsTfIdfFunction idf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return 1.0+Math.log(((double)nDocs+1.0)/((double)termstats.getDf()+1.0));
+            return 1.0+Math.log((nDocs+1.0)/(termstats.getDf()+1.0));
           }; 
-    name2function.put("idf",idf);
+    NAME2FUNCTION.put("idf",idf);
     
     StatsTfIdfFunction df = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return (double)termstats.getDf();
           }; 
-    name2function.put("df",df);
+    NAME2FUNCTION.put("df",df);
 
     StatsTfIdfFunction tf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ((Number)localtf).doubleValue();
           }; 
-    name2function.put("tf",tf);
+    NAME2FUNCTION.put("tf",tf);
 
     StatsTfIdfFunction ntf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return ((Number)localtf).doubleValue()/(double)maxTf;
+            return ((Number)localtf).doubleValue()/maxTf;
           }; 
-    name2function.put("ntf",ntf);
+    NAME2FUNCTION.put("ntf",ntf);
 
     StatsTfIdfFunction wtf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return ((Number)localtf).doubleValue()/(double)sumTf;
+            return ((Number)localtf).doubleValue()/sumTf;
           }; 
-    name2function.put("wtf",wtf);
+    NAME2FUNCTION.put("wtf",wtf);
 
     StatsTfIdfFunction ltf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return 1.0 + Math.log(localtf);
           }; 
-    name2function.put("ltf",ltf);
+    NAME2FUNCTION.put("ltf",ltf);
 
     StatsTfIdfFunction tfidf = 
           (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return localtf * idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
           }; 
-    name2function.put("tfidf",tfidf);
+    NAME2FUNCTION.put("tfidf",tfidf);
     
     StatsTfIdfFunction ntfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ntf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
                    idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
           }; 
-    name2function.put("ntfidf",ntfidf);
+    NAME2FUNCTION.put("ntfidf",ntfidf);
     
     StatsTfIdfFunction wtfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return wtf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
                    idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
           }; 
-    name2function.put("wtfidf",wtfidf);
+    NAME2FUNCTION.put("wtfidf",wtfidf);
     
     StatsTfIdfFunction ltfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ltf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
                    idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
           }; 
-    name2function.put("ltfidf",ltfidf);
+    NAME2FUNCTION.put("ltfidf",ltfidf);
   }
   // Convert a list of comma/semicolon/whitespace separated names of functions to a list of actual function lambdas
   public static Map<String,StatsTfIdfFunction> names2functions(String names) {
     Map<String,StatsTfIdfFunction> ret = new HashMap<>();
     String[] namesArray = names.split("[,;\\s]",-1);
     for(String name : namesArray) {
-      if(name2function.containsKey(name)) {
-        ret.put(name,name2function.get(name));
+      if(NAME2FUNCTION.containsKey(name)) {
+        ret.put(name,NAME2FUNCTION.get(name));
       } else {
         throw new GateRuntimeException("Statistic not know: "+name);
       }

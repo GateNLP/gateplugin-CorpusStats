@@ -1,8 +1,8 @@
 /* 
- * Copyright (C) 2015-2016 The University of Sheffield.
+ * Copyright (C) 2015-2018 The University of Sheffield.
  *
  * This file is part of gateplugin-CorpusStats
- * (see https://github.com/johann-petrak/gateplugin-CorpusStats)
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -198,7 +198,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     return caseSensitive;
   }
   
-  Locale ccLocale = new Locale("en");
+  private Locale ccLocale = new Locale("en");
   private String caseConversionLanguage = "en";
   @RunTime
   @CreoleParameter(comment = "Language for mapping to lower case, only relevant if caseSensitive=false",
@@ -390,12 +390,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
-  CorpusStatsCollocationsData corpusStats;
-  private static final Object syncObject = new Object();
-
-  // fields local to each duplicated PR
-  private int mostFrequentWordFreq = 0;
-  private int documentWordFreq = 0;
+  private CorpusStatsCollocationsData corpusStats;
 
   
   // Helper method: get the string for an annotation, from the right source
@@ -408,7 +403,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     } else {
       str = (String)ann.getFeatures().get(getStringFeature());
     }
-    if(str==null) str="";
+    if(str==null) {
+      str="";
+    }
     if(!getCaseSensitive()) {
       str = str.toLowerCase(ccLocale);
     }
@@ -518,7 +515,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       for(int i=0;i<oldSpanFromOffsets.size();i++) {
         long oldFrom = oldSpanFromOffsets.get(i);
         long oldTo = oldSpanToOffsets.get(i);
-        if(oldFrom==oldTo) continue;
+        if(oldFrom==oldTo) {
+          continue;
+        }
         AnnotationSet splits = splitAnns.get(oldFrom,oldTo);        
         spanFromOffsets.add(oldFrom);
         if(splits.size()>0) {
@@ -548,7 +547,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       long toOffset = spanToOffsets.get(i);
       // get the terms inside that span in document order as a list 
       List<Annotation> inAnns = inputAnns.get(fromOffset, toOffset).inDocumentOrder();
-      if(inAnns.size() < 2) continue; // Spans with less than 2 elements are ignored
+      if(inAnns.size() < 2) {
+        continue; // Spans with less than 2 elements are ignored
+      }
       
       // we have a span to process. We do this by extracting the strings 
       // and processing by string index now, instead of using offsets any more
@@ -733,7 +734,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
    * filled
    */
   protected void loadTfFile(Map<String,Double> term2tf) {
-      boolean tryOpen = false;
+      boolean tryOpen;
       boolean isGzip = tfFileUrl.toExternalForm().endsWith(".gz");
       if (UrlUtils.isFile(tfFileUrl)) {
         tryOpen = Files.fileFromURL(tfFileUrl).exists();
@@ -858,7 +859,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
   @Override
   protected void afterLastDocument(Controller ctrl, Throwable t) {
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       long startTime = Benchmark.startPoint();
       // TODO: we had this here, but why do we need it?
       corpusStats = (CorpusStatsCollocationsData) sharedData.get("corpusStats");
@@ -880,7 +881,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   protected void finishedNoDocument(Controller ctrl, Throwable t) {
     // After each run, we clean up, so that the code before each run can 
     // recreate or reload the data as if it was the first time
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       //!!!corpusStats.map = null;
       corpusStats = null;
       sharedData.remove("corpusStats");
