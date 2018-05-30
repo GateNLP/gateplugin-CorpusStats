@@ -19,7 +19,6 @@
  */
 package gate.plugin.corpusstats;
 
-import gate.api.UrlUtils;
 import gate.util.Files;
 import gate.util.GateRuntimeException;
 import java.io.File;

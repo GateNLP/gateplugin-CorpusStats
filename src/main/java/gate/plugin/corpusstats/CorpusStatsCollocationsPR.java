@@ -26,8 +26,6 @@
 package gate.plugin.corpusstats;
 
 import gate.*;
-import gate.api.AbstractDocumentProcessor;
-import gate.api.UrlUtils;
 import gate.creole.metadata.*;
 import gate.util.Benchmark;
 import gate.util.Files;
