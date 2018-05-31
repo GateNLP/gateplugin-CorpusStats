@@ -12,7 +12,7 @@
   <!-- The Maven coordinates of this plugin -->
   <groupId>uk.ac.gate.plugins</groupId>
   <artifactId>corpusstats</artifactId>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.2</version>
   <!-- Information about this plugin. This will be used when the plugin is 
 		shown in the GATE plugin manager -->
   <!-- Add a descriptive short name of the plugin -->
