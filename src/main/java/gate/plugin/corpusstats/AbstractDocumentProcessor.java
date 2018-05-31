@@ -19,8 +19,6 @@
  */
 package gate.plugin.corpusstats;
 
-import java.io.Serializable;
-
 import org.apache.log4j.Logger;
 
 import gate.Controller;
