@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2010- Austrian Research Institute for Artificial Intelligence (OFAI). 
- * Copyright (C) 2014-2016 The University of Sheffield.
+ * Copyright (C) 2015-2018 The University of Sheffield.
  *
  * This file is part of gateplugin-StringAnnotation
- * (see https://github.com/johann-petrak/gateplugin-StringAnnotation)
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -18,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
-package gate.api;
+package gate.plugin.corpusstats;
 
 import gate.util.GateRuntimeException;
 import java.io.IOException;
@@ -47,7 +46,7 @@ public class UrlUtils {
         str = "file://"+str;
       }
       return new URL(str);
-    } catch (Exception ex) {
+    } catch (MalformedURLException | URISyntaxException ex) {
       throw new GateRuntimeException("Cannot create URL from string "+str,ex);
     }
   }
@@ -74,7 +73,9 @@ public class UrlUtils {
       throw new GateRuntimeException("Cannot convert URL to URI: "+dirURL);
     }
     String path = dirURI.getPath();
-    if(!path.endsWith("/")) path = path+"/";
+    if(!path.endsWith("/")) {
+      path += "/";
+    }
     try {
       dirURI = new URI(
               dirURI.getScheme(),

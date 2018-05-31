@@ -1,11 +1,24 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright (C) 2015-2018 The University of Sheffield.
+ *
+ * This file is part of gateplugin-CorpusStats
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
 package gate.plugin.corpusstats;
 
-import gate.api.UrlUtils;
 import gate.util.Files;
 import gate.util.GateRuntimeException;
 import java.io.File;
@@ -81,7 +94,7 @@ public class CorpusStatsCollocationsData implements Serializable {
     if (dataUrl != null && !dataUrl.toExternalForm().isEmpty()) {
       // if it is a file URL, convert and check if it exists, if it is not
       // a file URL, check if we can open it. 
-      boolean tryOpen = false;
+      boolean tryOpen;
       if (UrlUtils.isFile(dataUrl)) {
         tryOpen = Files.fileFromURL(dataUrl).exists();
       } else {
@@ -128,13 +141,13 @@ public class CorpusStatsCollocationsData implements Serializable {
     // !!!!TODO !!!! TODO !!!! TODO
   }
 
-  double LOG2 = Math.log(2.0);
+  private final double LOG2 = Math.log(2.0);
 
   private double _log2(long value) {
     if (value == 0L) {
       return 0.0;
     }
-    return Math.log((double) value) / LOG2;
+    return Math.log(value) / LOG2;
   }
 
   private double _log2(double value) {
@@ -147,10 +160,10 @@ public class CorpusStatsCollocationsData implements Serializable {
   // The following values are getting initilised by initStats() and 
   // can then be re-used every time calcStats() is called (until the counts
   // are updated)
-  long N = 0L;
-  double Nfloat;
-  TDistribution tdist;
-  ChiSquaredDistribution chdist = new ChiSquaredDistribution(1);
+  private long N = 0L;
+  private double Nfloat;
+  private TDistribution tdist;
+  private ChiSquaredDistribution chdist = new ChiSquaredDistribution(1);
 
   /**
    * Initialise the global values for calculating statistics. This must be
@@ -158,17 +171,20 @@ public class CorpusStatsCollocationsData implements Serializable {
    */
   public void initStats() {
     N = totalContexts.sum();
-    Nfloat = (double) N;
+    Nfloat = N;
 
     if (N > 1) {
       tdist = new TDistribution(Nfloat - 1.0);
     } else {
       System.err.println("WARNING: only one context, cannot calculate student-t p-value, setting to 0");
     }
-    nPairsD = (double)countsPairs.size();
-    nTerms1D = (double)countsTerms1.size();
-    if(haveTwoTypes) nTerms2D = (double)countsTerms2.size();
-    else nTerms2D = nTerms1D;
+    nPairsD = countsPairs.size();
+    nTerms1D = countsTerms1.size();
+    if(haveTwoTypes) {
+      nTerms2D = countsTerms2.size();
+    } else {
+      nTerms2D = nTerms1D;
+    }
     laplacePairsN = Nfloat + laplaceCoefficient * nPairsD;
     laplaceTerms1N = Nfloat + laplaceCoefficient * nTerms1D;
     laplaceTerms2N = Nfloat + laplaceCoefficient * nTerms2D;
@@ -208,13 +224,13 @@ public class CorpusStatsCollocationsData implements Serializable {
     // divided by the total number of contexts
     if(laplaceCoefficient != 0.0) {
       System.err.println("DEBUG: !!!!!!!!!!!!!! Using Laplace Smoothing, c="+laplaceCoefficient);
-      ret.p_a_b = ((double) ret.pairCount + laplaceCoefficient) / laplacePairsN;
-      ret.p_a = ((double) ret.term1Count + laplaceCoefficient) / laplaceTerms1N;
-      ret.p_b = ((double) ret.term2Count + laplaceCoefficient) / laplaceTerms2N;      
+      ret.p_a_b = (ret.pairCount + laplaceCoefficient) / laplacePairsN;
+      ret.p_a = (ret.term1Count + laplaceCoefficient) / laplaceTerms1N;
+      ret.p_b = (ret.term2Count + laplaceCoefficient) / laplaceTerms2N;      
     } else {
-      ret.p_a_b = (double) ret.pairCount / Nfloat;
-      ret.p_a = (double) ret.term1Count / Nfloat;
-      ret.p_b = (double) ret.term2Count / Nfloat;
+      ret.p_a_b = ret.pairCount / Nfloat;
+      ret.p_a = ret.term1Count / Nfloat;
+      ret.p_b = ret.term2Count / Nfloat;
     }
 
     // TODO: skip this if we do not have a pair where the minimum
@@ -296,8 +312,9 @@ public class CorpusStatsCollocationsData implements Serializable {
         pw.println(totalContexts + "\t" + countsTerms1.size() + "\t" + t2s + "\t" + countsPairs.size() + "\t" + nDocs.sum());
         System.err.println("Number of contexts: " + totalContexts);
         System.err.println("Number of different terms type1: " + countsTerms1.size());
-        if(haveTwoTypes)
+        if(haveTwoTypes) {
           System.err.println("Number of different terms type2: " + countsTerms2.size());
+        }
         System.err.println("Number of different pairs: " + countsPairs.size());
         System.err.println("Docs:  " + nDocs);
       } catch (Exception ex) {

@@ -1,8 +1,8 @@
 /* 
- * Copyright (C) 2015-2016 The University of Sheffield.
+ * Copyright (C) 2015-2018 The University of Sheffield.
  *
  * This file is part of gateplugin-CorpusStats
- * (see https://github.com/johann-petrak/gateplugin-CorpusStats)
+ * (see https://github.com/GateNLP/gateplugin-CorpusStats)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -17,15 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software. If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- *
- *  TfIdf: Simple PR to calculate count DF and TF and calculate TFIDF scores,
- *  with support for parallel processing.
- */
+
 package gate.plugin.corpusstats;
 
 import gate.*;
-import gate.api.AbstractDocumentProcessor;
 import gate.creole.metadata.*;
 import gate.util.Benchmark;
 import gate.util.GateRuntimeException;
@@ -163,12 +158,11 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
   
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
-  // because all duplicated copies of the PR
-  CorpusStatsTfIdfData corpusStats;
+  // between all duplicated copies of the PR
+  private CorpusStatsTfIdfData corpusStats;
   // The following fields cache the values from corpusStats:
   private long nDocs;
   private long nWords;
-  private static final Object syncObject = new Object();
 
   // fields local to each duplicated PR
   private int mostFrequentWordFreq = 0;
@@ -177,7 +171,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
   // The following map is a placeholder for the options map to pass to each
   // of the stats functions. This is not used yet, so we just use this empty
   // map for now
-  static final Map<String,Object> dummyOptions = new HashMap<String,Object>();
+  static final Map<String,Object> DUMMY_OPTIONS = new HashMap<String,Object>();
 
   ////////////////////// PROCESSING
   @Override
@@ -288,19 +282,19 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
     if (key != null) {
       TermStats termStats = corpusStats.map.get(key);
       Integer tf = wordmap.get(key);
-      if(tf==null) tf = 0;
+      if(tf==null) {
+        tf = 0;
+      }
       if(termStats==null) {
         termStats = new TermStats();
       }
       for(String fname : statsFunctions.keySet()) {
-        Double stat = statsFunctions.get(fname).apply(
-                termStats, 
+        Double stat = statsFunctions.get(fname).apply(termStats, 
                 nDocs, 
-                nWords, 
-                (long)tf, 
+                nWords, tf, 
                 mostFrequentWordFreq, 
                 documentWordFreq, 
-                dummyOptions);
+                DUMMY_OPTIONS);
         String fn = fname;
         if(featurePrefix!=null && !featurePrefix.isEmpty()) {
           fn = featurePrefix+fn;
@@ -345,7 +339,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
   @Override
   protected void beforeFirstDocument(Controller ctrl) {
     // if reference null, create the global map
-    synchronized (syncObject) {
+    synchronized (SYNC_OBJECT) {
       corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStats");
       if (corpusStats != null) {        
         System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
