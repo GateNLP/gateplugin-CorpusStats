@@ -7,10 +7,13 @@ pipeline {
         maven 'Maven Current' 
         jdk 'JDK1.8' 
     }
+    options {
+        disableConcurrentBuilds()
+    }
     stages {
         stage ('Build') {
             steps {
-                sh 'mvn -e clean compile' 
+                sh 'mvn -e clean install' 
             }
         }
         stage('Document') {
