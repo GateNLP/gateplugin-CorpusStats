@@ -8,13 +8,6 @@
   over a corpus. The processing resources also work in a multi-threaded mode with duplicated instances of the PR, so 
   this can be used with GCP.</description>
   <url>https://gatenlp.github.io/gateplugin-CorpusStats/</url>
-  <licenses>
-    <license>
-      <name>GNU Lesser General Public License (LGPL), Version 3</name>
-      <url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
   <developers>
     <developer>
       <name>Johann Petrak</name>
@@ -35,6 +28,13 @@
     <url>https://github.com/GateNLP/gateplugin-CorpusStats</url>
   </scm>
   <packaging>jar</packaging>
+  <licenses>
+    <license>
+      <name>GNU Lesser General Public License (LGPL), Version 3</name>
+      <url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
