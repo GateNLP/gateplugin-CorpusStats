@@ -3,7 +3,7 @@
   <groupId>uk.ac.gate.plugins</groupId>
   <artifactId>corpusstats</artifactId>
   <version>1.2</version>
-  <name>${project.groupId}:${project.artifactId}</name>
+  <name>CorpusStatst</name>
   <description>A plugin for calculating word statistics like tf, df, tf*idf, and pairwise collocation statistics like PMI
   over a corpus. The processing resources also work in a multi-threaded mode with duplicated instances of the PR, so 
   this can be used with GCP.</description>
