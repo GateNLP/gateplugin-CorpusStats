@@ -1,20 +1,13 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>uk.ac.gate</groupId>
-    <artifactId>gate-plugin-base</artifactId>
-    <version>8.5-SNAPSHOT</version>
-    <relativePath/>
-  </parent>
   <groupId>uk.ac.gate.plugins</groupId>
   <artifactId>corpusstats</artifactId>
   <version>1.2-SNAPSHOT</version>
-  <name>CorpusStats</name>
+  <name>${project.groupId}:${project.artifactId}</name>
   <description>A plugin for calculating word statistics like tf, df, tf*idf, and pairwise collocation statistics like PMI
   over a corpus. The processing resources also work in a multi-threaded mode with duplicated instances of the PR, so 
   this can be used with GCP.</description>
-  <url> </url>
+  <url>https://gatenlp.github.io/gateplugin-CorpusStats/</url>
   <licenses>
     <license>
       <name>GNU Lesser General Public License (LGPL), Version 3</name>
@@ -22,6 +15,35 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  <developers>
+    <developer>
+      <name>Johann Petrak</name>
+      <email>johann.petrak@gmail.com</email>
+      <organization>GATE Team</organization>
+      <organizationUrl>https://gate.ac.uk</organizationUrl>
+    </developer>
+    <developer>
+      <name>GATE Team</name>
+      <email>gate-developers@lists.sourceforge.net</email>
+      <organization>GATE Team</organization>
+      <organizationUrl>https://gate.ac.uk</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/GateNLP/gateplugin-CorpusStats.git</connection>
+    <developerConnection>scm:git:git@github.com:GateNLP/gateplugin-CorpusStats.git</developerConnection>
+    <url>https://github.com/GateNLP/gateplugin-CorpusStats</url>
+  </scm>
+  <packaging>jar</packaging>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <parent>
+    <groupId>uk.ac.gate</groupId>
+    <artifactId>gate-plugin-base</artifactId>
+    <version>8.5-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
   <dependencies>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -29,4 +51,5 @@
       <version>3.6.1</version>
     </dependency>
   </dependencies>
+  <modelVersion>4.0.0</modelVersion>
 </project>
