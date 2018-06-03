@@ -4,9 +4,10 @@
   <artifactId>corpusstats</artifactId>
   <version>1.2</version>
   <name>CorpusStats</name>
-  <description>A plugin for calculating word statistics like tf, df, tf*idf, and pairwise collocation statistics like PMI
-  over a corpus. The processing resources also work in a multi-threaded mode with duplicated instances of the PR, so 
-  this can be used with GCP.</description>
+  <description>GATE plugin Corpus Statistics provides processing resources for calculating 
+    word statistics like tf, df, tf*idf, and for calculating pairwise collocation statistics like PMI
+    over a corpus. The processing resources also work in a multi-threaded mode with duplicated instances of the PR, so 
+    this can be used with GCP.</description>
   <url>https://gatenlp.github.io/gateplugin-CorpusStats/</url>
   <organization>
     <name>GATE Team</name>
