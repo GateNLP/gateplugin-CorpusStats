@@ -5,22 +5,22 @@
       <gate.creole.Plugin-Maven>
         <group>uk.ac.gate.plugins</group>
         <artifact>corpusstats</artifact>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
       </gate.creole.Plugin-Maven>
       <gate.creole.Plugin-Maven>
         <group>uk.ac.gate.plugins</group>
         <artifact>annie</artifact>
-        <version>8.5-SNAPSHOT</version>
+        <version>8.5</version>
       </gate.creole.Plugin-Maven>
       <gate.creole.Plugin-Maven>
         <group>uk.ac.gate.plugins</group>
         <artifact>tools</artifact>
-        <version>8.5-SNAPSHOT</version>
+        <version>8.5</version>
       </gate.creole.Plugin-Maven>
       <gate.creole.Plugin-Maven>
         <group>uk.ac.gate.plugins</group>
         <artifact>developer-tools</artifact>
-        <version>8.5-SNAPSHOT</version>
+        <version>8.5</version>
       </gate.creole.Plugin-Maven>
     </localList>
     <collectionType>java.util.ArrayList</collectionType>
@@ -269,13 +269,13 @@
                 <entry>
                   <string>tokeniserRulesURL</string>
                   <gate.util.persistence.PersistenceManager-RRPersistence>
-                    <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/tokeniser/DefaultTokeniser.rules</uriString>
+                    <uriString>creole://uk.ac.gate.plugins;annie;8.5/resources/tokeniser/DefaultTokeniser.rules</uriString>
                   </gate.util.persistence.PersistenceManager-RRPersistence>
                 </entry>
                 <entry>
                   <string>transducerGrammarURL</string>
                   <gate.util.persistence.PersistenceManager-RRPersistence>
-                    <uriString>creole://uk.ac.gate.plugins;annie;8.5-SNAPSHOT/resources/tokeniser/postprocess.jape</uriString>
+                    <uriString>creole://uk.ac.gate.plugins;annie;8.5/resources/tokeniser/postprocess.jape</uriString>
                   </gate.util.persistence.PersistenceManager-RRPersistence>
                 </entry>
               </localMap>
