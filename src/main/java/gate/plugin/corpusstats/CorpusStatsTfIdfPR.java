@@ -24,6 +24,7 @@
  */
 package gate.plugin.corpusstats;
 
+import org.jpetrak.gate8.api.plugins.AbstractDocumentProcessor;
 import gate.*;
 import gate.creole.metadata.*;
 import gate.util.Benchmark;
