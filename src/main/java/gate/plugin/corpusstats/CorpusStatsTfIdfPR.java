@@ -235,7 +235,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
   ////////////////////// PROCESSING
   @Override
-  protected Document process(Document document) {
+  protected void process(Document document) {
 
     if(corpusStats == null) {
       corpusStats = (CorpusStatsTfIdfData)getSharedData().get("corpusStatsTfIdf");
@@ -307,7 +307,6 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
 
     fireProcessFinished();
     fireStatusChanged("CorpusStatsTfIdfPR: processing complete!");
-    return document;
   }
 
   // NOTE: this method updates the global fields documentWordFreq

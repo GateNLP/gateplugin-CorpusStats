@@ -421,7 +421,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   
   ////////////////////// PROCESSING
   @Override
-  protected Document process(Document document) {
+  protected void process(Document document) {
 
     //System.out.println("!!! DEBUG: processing document "+document.getName());
     fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
@@ -719,7 +719,6 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
 
     fireProcessFinished();
     fireStatusChanged("CorpusStatsCollocations: processing complete!");
-    return document;
   }
 
   

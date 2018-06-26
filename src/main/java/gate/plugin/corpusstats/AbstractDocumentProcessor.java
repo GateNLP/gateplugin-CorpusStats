@@ -37,18 +37,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract base class for all the PRs in this plugin.
- * This is very similar to what the AbstractLanguageAnalyser should have been.
  */
+// The inheriting class should define a serverVersionUID
+@SuppressWarnings("serial")
 public abstract class AbstractDocumentProcessor
         extends AbstractLanguageAnalyser
         implements ControllerAwarePR, Benchmarkable {
 
-  private static final long serialVersionUID = -4097016880446371085L;
-
   /**
    *
    */
-  private final Logger logger = Logger.getLogger(AbstractDocumentProcessor.class.getCanonicalName());
+  private final Logger LOGGER = 
+          Logger.getLogger(AbstractDocumentProcessor.class.getCanonicalName());
 
   
   // This will be shared between all duplicates
@@ -64,7 +64,6 @@ public abstract class AbstractDocumentProcessor
   }
   
   protected Controller controller;
-
   
   protected static final Object SYNC_OBJECT = new Object();
   
@@ -121,51 +120,89 @@ public abstract class AbstractDocumentProcessor
     return sharedData;
   }
   
+  protected Object syncObject = null;
+         
+  @Sharable
+  public void setSyncObject(Object val) {
+    syncObject = val;
+  }
+  public Object getSyncObject() {
+    return syncObject;
+  }
+  
+  
+         
+  
   // Each duplicate holds its own duplicate id after initialisation.
   // The duplicate id is 0-based, not 1-based, so the first duplicate has id 0 and 
   // the last nDuplicates-1
   protected int duplicateId = 0;
+  public int getDuplicateId() {
+    return duplicateId;
+  }
 
   //===============================================================================
   // Implementation of the relevant API methods for DocumentProcessors. These
   // get inherited by the implementing class. This also defines abstract methods 
   // that make it easier to handle the control flow:
-  // void process(Document doc) - replaces void execute()
+  // void process(Document doc) - replaces void execute(): process the Document
   // void beforeFirstDocument(Controller) - called before the first document is processed
   //     (not called if there were no documents in the corpus, for example)
-  // void afterLastDocument(Controller, Throwable) - called after the last document was processed
+  //     This gets called exactly once, even if there are duplicates of the PR
+  //     and no process or other callback can be expected to run concurrently.
+  // void afterLastDocument(Controller, Throwable) - called after the last 
+  //     document was processed
   //     (not called if there were no documents in the corpus). If Throwable is
-  //     not null, processing stopped because of an exception.
+  //     not null, processing stopped because of an exception. This only 
+  //     gets invoked once
   // void finishedNoDocument(Controller, Throwable) - called when processing 
   //     finishes and no documents were processed. If Throwable is not null,
-  //     processing finished because of an error.
+  //     processing finished because of an error. This only gets invoked once.
+  // int getSeenDocuments().get() - returns the current number of documents
+  //     for which processing has been started
+  // int getDuplicateId() - returns the duplicate number for the current duplicate.
+  //     this returns 0 for the instance for which init() was invoked first, 
+  //     usually the template other duplicates where cloned from.
+  // int getNDuplicates().get() - returns the current number of duplicates 
+  //     that exist. 
   //================================================================================
   @Override
   public Resource init() throws ResourceInstantiationException {
-    // we always provide the following fields to all PRs which are used for duplicated PRs:
+    // we always provide the following shared fields to all PRs which are used for duplicated PRs:
     // nDuplicates is an AtomicInt which gets incremented whenever a resource
-    // gets duplicated. 
-    synchronized (SYNC_OBJECT) {
-      if(getNDuplicates() == null || getNDuplicates().get() == 0) {        
-        System.err.println("DEBUG: creating first instance of PR "+this.getName());
-        setNDuplicates(new AtomicInteger(1));
-        duplicateId = 0;
-        setSharedData(new ConcurrentHashMap<>());
-        setSeenDocuments(new AtomicInteger(0));
-        setRemainingDuplicates(new AtomicInteger(0));        
-        System.err.println("DEBUG: "+this.getName()+" created duplicate "+duplicateId);
-      } else {
-        int thisn = getNDuplicates().getAndAdd(1);
-        duplicateId = thisn;
-        System.err.println("DEBUG: created duplicate "+duplicateId+" of PR "+this.getName());
-      }
+    // gets duplicated. seenDocuments is an AtomicInt that contains the number
+    // of documents for which processing was started already. 
+    // syncObject is an Object used for synchronizing between threads 
+    // that run duplicates.
+    // sharedData is a ConcurrentHashMap that contains any
+    // other shared data.
+    
+    // NOTE: this piece of code does not need to get synchronized since we 
+    // always expect duplication to happen in a single thread, one after the
+    // other. Usuall, all duplicates will get created from the same first
+    // created instance, but we do not rely on that.
+    if(getNDuplicates() == null || getNDuplicates().get() == 0) {        
+      LOGGER.debug("DEBUG: creating first instance of PR "+this.getName());
+      setNDuplicates(new AtomicInteger(1));
+      duplicateId = 0;
+      setSharedData(new ConcurrentHashMap<>());
+      setSeenDocuments(new AtomicInteger(0));
+      setRemainingDuplicates(new AtomicInteger(0));
+      setSyncObject(new Object());
+      LOGGER.debug("DEBUG: "+this.getName()+" created duplicate "+duplicateId);
+    } else {
+      int thisn = getNDuplicates().getAndAdd(1);
+      duplicateId = thisn;
+      LOGGER.debug("DEBUG: created duplicate "+duplicateId+" of PR "+this.getName());
     }
     return this;
   }
 
   @Override
   public void execute() throws ExecutionException {
-    synchronized (SYNC_OBJECT) {
+    // The document counting happens in this synchronized code block.
+    // We could probably also use volatile Integer for the counting.
+    synchronized (getSyncObject()) {
       if(getSeenDocuments().compareAndSet(0, 1)) {
         System.err.println("DEBUG "+this.getName()+" Have 0 set 1, beforeFirstDocument, id="+duplicateId);
         beforeFirstDocument(controller);
@@ -174,23 +211,34 @@ public abstract class AbstractDocumentProcessor
         getSeenDocuments().incrementAndGet();
       }
     }
+    // actual processing happens in parallel if there are duplicates
     process(getDocument());
   }
 
+  /**
+   * Handle the controller execution aborted callback.
+   * 
+   * This does very much the same as the controller execution finished callback
+   * but also stores the last Throwable so it can be inspected by the PR.
+   * @param arg0 controller invoking the callback
+   * @param arg1 throwable representing the error that was encountered
+   * @throws ExecutionException 
+   */
   @Override
   public void controllerExecutionAborted(Controller arg0, Throwable arg1)
           throws ExecutionException {
     // reset the flags for the next time the controller is run
     controller = arg0;
     setLastError(arg1);
+    LOGGER.error("Controller ended with error "+arg1.getMessage());
     int tmp = getRemainingDuplicates().getAndDecrement();
-    System.err.println("DEBUG "+this.getName()+" controllerExecutionAborted invocation "+tmp+" for duplicate "+duplicateId);
+    LOGGER.debug("DEBUG "+this.getName()+" controllerExecutionAborted invocation "+tmp+" for duplicate "+duplicateId);
     if(tmp==1) {      
       if (getSeenDocuments().get() > 0) {
-        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking afterLastDocument");
+        LOGGER.debug("DEBUG "+this.getName()+" last controller-aborted, invoking afterLastDocument");
         afterLastDocument(arg0, getLastError());
       } else {
-        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking finishedNoDocument");
+        LOGGER.debug("DEBUG "+this.getName()+" last controller-aborted, invoking finishedNoDocument");
         finishedNoDocument(arg0, getLastError());
       }
     }
@@ -201,13 +249,13 @@ public abstract class AbstractDocumentProcessor
           throws ExecutionException {
     controller = arg0;
     int tmp = getRemainingDuplicates().getAndDecrement();
-    System.err.println("DEBUG "+this.getName()+" controllerExecutionFinished invocation "+tmp+" for duplicate "+duplicateId);
+    LOGGER.debug(this.getName()+": controllerExecutionFinished invocation "+tmp+" for duplicate "+duplicateId);
     if(tmp==1) {      
       if (getSeenDocuments().get() > 0) {
-        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking afterLastDocument");
+        LOGGER.debug("DEBUG "+this.getName()+": Last controller-finished, invoking afterLastDocument");
         afterLastDocument(arg0, getLastError());
       } else {
-        System.err.println("DEBUG "+this.getName()+" last controller finished/aborted, invoking finishedNoDocument");
+        LOGGER.debug("DEBUG "+this.getName()+": Last controller-finished, invoking finishedNoDocument");
         finishedNoDocument(arg0, getLastError());
       }
     }
@@ -222,11 +270,12 @@ public abstract class AbstractDocumentProcessor
     // at any later time, another duplicate could already have their execute method invoked 
     int tmp = getRemainingDuplicates().incrementAndGet();
     if(tmp==1) {
-      System.err.println("DEBUG "+this.getName()+" first controller started invocation, resetting error and doc count");
+      LOGGER.debug(this.getName()+": First controllerExecutionStarted invocation, resetting error and doc count in duplicate "+duplicateId);
       setLastError(null);
       getSeenDocuments().set(0);
+    } else {
+      LOGGER.debug(this.getName()+": controllerExecutionStarted invocation number "+tmp+" in duplicate "+duplicateId);
     }
-    System.err.println("DEBUG "+this.getName()+" controller started invocation number "+tmp+" in duplicate "+duplicateId);
   }
   
 
@@ -240,23 +289,17 @@ public abstract class AbstractDocumentProcessor
   
   /**
    * The new method to implement by PRs which derive from this class.
-   * This must return a document which will usually be the same object
-   * as it was passed.
-   * NOTE: in the future the better option here may be to return 
-   * Optional of Document or even List of Document. That way downstream
-   * PRs could be made to not process filtered documents and to process
-   * additional generated documents. 
    * 
    * @param document  the document to get processed
-   * @return the processed document, usually identical to the one passed
    * 
    */
-  protected abstract Document process(Document document);
+  protected abstract void process(Document document);
 
   /**
    * Method that runs before the first document is being processed by a controller.
    * 
    * This method is not called if no documents are processed at all. 
+   * This method only gets invoked once, even if there are duplicates of the PR.
    * 
    * @param ctrl  the controller that is going to be run on the documents
    */
@@ -265,7 +308,8 @@ public abstract class AbstractDocumentProcessor
   /**
    * Method that runs after the last Document is run by that controller. 
    * 
-   * This method is not called if there are no documents. 
+   * This method is not called if there are no documents. This method is only
+   * invoked once even if there are duplicates of the PR.
    * 
    * @param ctrl the controller that has been run
    * @param t any throwable if an error occurred, otherwise null
@@ -274,7 +318,7 @@ public abstract class AbstractDocumentProcessor
 
   /**
    * Method that runs when a controller finishes but no documents were processed.
-   * 
+   * This method gets only invoked once even if there are duplicates of the PR.
    * 
    * @param ctrl the controller
    * @param t any throwable if an error occurred, otherwise null

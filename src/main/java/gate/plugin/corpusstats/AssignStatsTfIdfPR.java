@@ -175,7 +175,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
 
   ////////////////////// PROCESSING
   @Override
-  protected Document process(Document document) {
+  protected void process(Document document) {
 
     AnnotationSet inputAS;
     if (inputASName == null
@@ -260,7 +260,6 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
 
     fireProcessFinished();
     fireStatusChanged("TfIdf: processing complete!");
-    return document;
   }
 
   private void assignStats(Document doc, Annotation ann, Map<String, Integer> wordmap) {
