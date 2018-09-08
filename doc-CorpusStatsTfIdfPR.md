@@ -1,6 +1,7 @@
 # CorpusStatsTfIdfPR Processing Resource
 
-This PR calculates the term frequencies (Tf) and document frequencies (Df) of terms in a corpus.
+This PR calculates the term frequencies (Tf, often also called total term frequencies, TTF) 
+and document frequencies (Df) of terms over a whole  corpus.
 Terms could be words identified by Token annotations but any annotation can be used where the string
 for the term is either the document string covered by the annotation or the value of some feature
 in that annotation.
@@ -43,7 +44,8 @@ when data needs to get pre-loaded for this PR, or when the `AssignStatsPR` shoul
 
 **The tfDfFile** This is a TSV-format file which contains a header row, and one row for each distinct term in the corpus with the following fields:
 * `term`: the string of the term
-* `tf`: term frequency, the total number of times this term occurs in the corpus
+* `tf`: term frequency, the total number of times this term occurs in the corpus, this is often also called total term frequency
+   to distinguish it from term frequency referring to a the frequency of a term in some document or text.
 * `df`: document frequency, the number of documents the term occurs in at least once
 * `ntf`: "normalized term frequency". This is the sum of normalized term frequencies for each document where
   the term occurs. The normalization is done by dividing the actual term frequency for the document by the
