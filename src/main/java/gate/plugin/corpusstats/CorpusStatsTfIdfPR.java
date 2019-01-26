@@ -369,6 +369,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       // NOTE: if the PR is run several times in a row, then when we arrive
       // here, the corpusstats object should always be initialized to empty,
       // since we always remove it after processing has finished. 
+      corpusStats.isInitialized = true;
       if(getReuseExisting()) {
         corpusStats.load(dataFileUrl, sumsFileUrl, tfDfFileUrl);
       }

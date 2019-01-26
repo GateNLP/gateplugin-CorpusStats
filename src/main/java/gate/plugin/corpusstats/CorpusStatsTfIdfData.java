@@ -50,6 +50,9 @@ public class CorpusStatsTfIdfData implements Serializable {
   public LongAdder nWords = null;  
   public boolean isCaseSensitive = true;
   public Locale ccLocale = new Locale("en");
+  // If this is true, we check if anything that gets loaded is compatible,
+  // otherwise we set from the loaded data
+  public boolean isInitialized = false;
   
   public void load(URL dataUrl, URL sumsTsvUrl, URL statsTsvUrl) {
     boolean haveLoaded = false;
@@ -75,10 +78,10 @@ public class CorpusStatsTfIdfData implements Serializable {
             nWords = other.nWords;
             // NOTE: if the loaded stats file has a different case sensitivity setting, 
             // we throw an error, this does not make sense to have!
-            if(isCaseSensitive != other.isCaseSensitive) {
+            if(isInitialized && (isCaseSensitive != other.isCaseSensitive)) {
               throw new GateRuntimeException("Data file loaded has a different caseSensitivy setting");
             }
-            if(!ccLocale.equals(other.ccLocale)) {
+            if(isInitialized && !ccLocale.equals(other.ccLocale)) {
               throw new GateRuntimeException("Data file loaded has a different case conversion language");
             }
           }
