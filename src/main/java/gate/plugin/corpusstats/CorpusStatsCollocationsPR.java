@@ -425,7 +425,7 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
   protected void process(Document document) {
 
     //System.out.println("!!! DEBUG: processing document "+document.getName());
-    fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
+    //fireStatusChanged("CorpusStatsCollocationsPR: running on " + document.getName() + "...");
     
     if(corpusStats == null) {
       corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
@@ -436,7 +436,9 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
       term2tf = tmp;
       corpusStats = (CorpusStatsCollocationsData)getSharedData().get("corpusStats");
     }
-    
+    if (isInterrupted()) {
+      throw new GateRuntimeException("AssignStatsTfIdfPR has been interrupted");
+    }    
     
     AnnotationSet inputAS;
     if (inputASName == null
@@ -718,8 +720,8 @@ public class CorpusStatsCollocationsPR extends AbstractDocumentProcessor {
     corpusStats.nDocs.add(1);
     benchmarkCheckpoint(startTime, "__CollocationsProcess");
 
-    fireProcessFinished();
-    fireStatusChanged("CorpusStatsCollocations: processing complete!");
+    //fireProcessFinished();
+    //fireStatusChanged("CorpusStatsCollocations: processing complete!");
   }
 
   

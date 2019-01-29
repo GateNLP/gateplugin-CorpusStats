@@ -200,7 +200,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
-    fireStatusChanged("AssignStatsPR: running on " + document.getName() + "...");
+    // fireStatusChanged("AssignStatsPR: running on " + document.getName() + "...");
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
@@ -216,7 +216,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
       for (Annotation ann : inputAnns) {
         calcLocalStats(document, ann, wordcounts);
         if (isInterrupted()) {
-          throw new GateRuntimeException("TfIdf has been interrupted");
+          throw new GateRuntimeException("AssignStatsTfIdfPR has been interrupted");
         }
       }
     } else {
@@ -226,21 +226,18 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
         for (Annotation ann : containedAnns) {
           calcLocalStats(document, ann, wordcounts);
           if (isInterrupted()) {
-            throw new GateRuntimeException("TfIdf has been interrupted");
+            throw new GateRuntimeException("AssignStatsTfIdfPR has been interrupted");
           }
         }
       }
     }
-    
-    // TODO: now use the local stats and the global stats to calculate and assign
-    // the values to the annotations
     
     if (containingAnns == null) {
       // go through all input annotations 
       for (Annotation ann : inputAnns) {
         assignStats(document, ann, wordcounts);
         if (isInterrupted()) {
-          throw new GateRuntimeException("TfIdf has been interrupted");
+          throw new GateRuntimeException("AssignStatsTfIdfPR has been interrupted");
         }
       }
     } else {
@@ -250,7 +247,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
         for (Annotation ann : containedAnns) {
           assignStats(document, ann, wordcounts);
           if (isInterrupted()) {
-            throw new GateRuntimeException("TfIdf has been interrupted");
+            throw new GateRuntimeException("AssignStatsTfIdfPR has been interrupted");
           }
         }
       }
@@ -259,8 +256,8 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
 
     benchmarkCheckpoint(startTime, "__TfIdfProcess");
 
-    fireProcessFinished();
-    fireStatusChanged("TfIdf: processing complete!");
+    //fireProcessFinished();
+    //fireStatusChanged("AssignStatsTfIdfPR: processing complete!");
   }
 
   private void assignStats(Document doc, Annotation ann, Map<String, Integer> wordmap) {
@@ -341,16 +338,12 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
     // if reference null, create the global map
     synchronized (SYNC_OBJECT) {
       corpusStats = (CorpusStatsTfIdfData)sharedData.get("corpusStats");
-      if (corpusStats != null) {        
-        System.err.println("INFO: corpusStats already created, we are duplicate " + duplicateId + " of PR " + this.getName());
-      } else {
-        System.err.println("INFO: creating corpusStats in duplicate " + duplicateId + " of PR " + this.getName());
+      if (corpusStats == null) {
         corpusStats = new CorpusStatsTfIdfData();
         corpusStats.map = new ConcurrentHashMap<>(1024 * 1024, 32, 32);
         corpusStats.nDocs = new LongAdder();
         corpusStats.nWords = new LongAdder();
         sharedData.put("corpusStats", corpusStats);
-        System.err.println("INFO: corpusStats created and initialized in duplicate " + duplicateId + " of PR " + this.getName());
       }
       corpusStats.load(dataFileUrl, null, null);
       nDocs = corpusStats.nDocs.longValue();

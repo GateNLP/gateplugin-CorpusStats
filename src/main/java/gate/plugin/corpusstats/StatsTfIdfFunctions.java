@@ -28,6 +28,7 @@ import java.util.Map;
  * This class contains the definitions of the stats functions and a static
  * map that maps the name of the function to its definition. It also 
  * has a method to convert a list of function names to a list of functions.
+ * 
  * @author Johann Petrak
  */
 public class StatsTfIdfFunctions {

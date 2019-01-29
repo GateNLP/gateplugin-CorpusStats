@@ -220,11 +220,6 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     return reuseExisting;
   }
           
-          
-          
-  
-  
-
   ////////////////////// FIELDS
   // these fields will contain references to objects which are shared
   // because all duplicated copies of the PR
@@ -263,7 +258,7 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
       //System.out.println("DEBUG: got containing annots: "+containingAnns.size()+" type is "+containingAnnotationType);
     }
 
-    fireStatusChanged("CorpusStatsTfIdfPR: running on " + document.getName() + "...");
+    //fireStatusChanged("CorpusStatsTfIdfPR: running on " + document.getName() + "...");
 
     // we first count the terms in this document in our own map, then 
     // add the final counts to the global map.
@@ -306,8 +301,8 @@ public class CorpusStatsTfIdfPR extends AbstractDocumentProcessor {
     corpusStats.nDocs.add(1);
     benchmarkCheckpoint(startTime, "__TfIdfProcess");
 
-    fireProcessFinished();
-    fireStatusChanged("CorpusStatsTfIdfPR: processing complete!");
+    //fireProcessFinished();
+    //fireStatusChanged("CorpusStatsTfIdfPR: processing complete!");
   }
 
   // NOTE: this method updates the global fields documentWordFreq
