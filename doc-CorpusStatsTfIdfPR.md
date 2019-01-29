@@ -44,7 +44,7 @@ when data needs to get pre-loaded for this PR, or when the `AssignStatsPR` shoul
 
 **The tfDfFile** This is a TSV-format file which contains a header row, and one row for each distinct term in the corpus with the following fields:
 * `term`: the string of the term
-* `tf`: term frequency, the total number of times this term occurs in the corpus, this is often also called total term frequency
+* `tf`: term frequency, the total number of times this term occurs in the corpus, this is often also called total term frequency or corpus term frequency (ctf)
    to distinguish it from term frequency referring to a the frequency of a term in some document or text.
 * `df`: document frequency, the number of documents the term occurs in at least once
 * `ntf`: "normalized term frequency". This is the sum of normalized term frequencies for each document where
