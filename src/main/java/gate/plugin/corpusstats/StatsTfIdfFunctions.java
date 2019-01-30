@@ -39,65 +39,123 @@ public class StatsTfIdfFunctions {
     // would get negative which we do not want)
     // We also add 1 to the logarithm, so the lower bound is 1.0. Because of how we smooth the quotient,
     // this is a strict lower bound/
+
+    StatsTfIdfFunction f_nDocs = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return Long.valueOf(nDocs).doubleValue();
+          }; 
+    NAME2FUNCTION.put("nDocs", f_nDocs);
+    
+    StatsTfIdfFunction f_nWords = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return Long.valueOf(nWords).doubleValue();
+          }; 
+    NAME2FUNCTION.put("nWords", f_nWords);
+    
+    StatsTfIdfFunction f_nTerms = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return Long.valueOf(nTerms).doubleValue();
+          }; 
+    NAME2FUNCTION.put("nTerms", f_nTerms);
+    
     StatsTfIdfFunction idf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return 1.0+Math.log((nDocs+1.0)/(termstats.getDf()+1.0));
           }; 
     NAME2FUNCTION.put("idf",idf);
     
     StatsTfIdfFunction df = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return (double)termstats.getDf();
           }; 
     NAME2FUNCTION.put("df",df);
 
     StatsTfIdfFunction tf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ((Number)localtf).doubleValue();
           }; 
     NAME2FUNCTION.put("tf",tf);
 
     StatsTfIdfFunction ntf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ((Number)localtf).doubleValue()/maxTf;
           }; 
     NAME2FUNCTION.put("ntf",ntf);
 
     StatsTfIdfFunction wtf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return ((Number)localtf).doubleValue()/sumTf;
           }; 
     NAME2FUNCTION.put("wtf",wtf);
 
     StatsTfIdfFunction ltf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
             return 1.0 + Math.log(localtf);
           }; 
     NAME2FUNCTION.put("ltf",ltf);
 
+    
+    
     StatsTfIdfFunction tfidf = 
-          (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return localtf * idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return localtf * idf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options);
           }; 
     NAME2FUNCTION.put("tfidf",tfidf);
     
-    StatsTfIdfFunction ntfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return ntf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
-                   idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
+    StatsTfIdfFunction ntfidf = (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return ntf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options) * 
+                   idf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options);
           }; 
     NAME2FUNCTION.put("ntfidf",ntfidf);
     
-    StatsTfIdfFunction wtfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return wtf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
-                   idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
+    StatsTfIdfFunction wtfidf = (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return wtf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options) * 
+                   idf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options);
           }; 
     NAME2FUNCTION.put("wtfidf",wtfidf);
     
-    StatsTfIdfFunction ltfidf = (TermStats termstats, long nDocs, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
-            return ltf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options) * 
-                   idf.apply(termstats, nDocs, nTerms, localtf, maxTf, sumTf, options);
+    StatsTfIdfFunction ltfidf = (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return ltf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options) * 
+                   idf.apply(termstats, nDocs, nWords, nTerms, localtf, maxTf, sumTf, options);
           }; 
     NAME2FUNCTION.put("ltfidf",ltfidf);
+    
+    StatsTfIdfFunction f_ctf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return Long.valueOf(termstats.getTf()).doubleValue();
+          }; 
+    NAME2FUNCTION.put("ctf", f_ctf);
+    
+    StatsTfIdfFunction f_cntf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return termstats.getNTf();
+          }; 
+    NAME2FUNCTION.put("cntf", f_cntf);
+    
+    StatsTfIdfFunction f_cwtf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return termstats.getWTf();
+          }; 
+    NAME2FUNCTION.put("cwtf", f_cwtf);
+    
+    StatsTfIdfFunction f_actf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return Long.valueOf(termstats.getTf()).doubleValue()/nDocs;
+          }; 
+    NAME2FUNCTION.put("actf", f_actf);
+    
+    StatsTfIdfFunction f_acntf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return termstats.getNTf()/nDocs;
+          }; 
+    NAME2FUNCTION.put("acntf", f_acntf);
+    
+    StatsTfIdfFunction f_acwtf = 
+          (TermStats termstats, long nDocs, long nWords, long nTerms, long localtf, long maxTf, long sumTf, Map<String,Object> options) -> {
+            return termstats.getNTf()/nDocs;
+          }; 
+    NAME2FUNCTION.put("acwtf", f_acwtf);
+    
   }
   // Convert a list of comma/semicolon/whitespace separated names of functions to a list of actual function lambdas
   public static Map<String,StatsTfIdfFunction> names2functions(String names) {

@@ -164,6 +164,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
   // The following fields cache the values from corpusStats:
   private long nDocs;
   private long nWords;
+  private long nTerms;
 
   // fields local to each duplicated PR
   private int mostFrequentWordFreq = 0;
@@ -288,7 +289,9 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
       for(String fname : statsFunctions.keySet()) {
         Double stat = statsFunctions.get(fname).apply(termStats, 
                 nDocs, 
-                nWords, tf, 
+                nWords, 
+                nTerms,
+                tf, 
                 mostFrequentWordFreq, 
                 documentWordFreq, 
                 DUMMY_OPTIONS);
@@ -348,6 +351,7 @@ public class AssignStatsTfIdfPR extends AbstractDocumentProcessor {
       corpusStats.load(dataFileUrl, null, null);
       nDocs = corpusStats.nDocs.longValue();
       nWords = corpusStats.nWords.longValue();
+      nTerms = corpusStats.map.size();
     }
   }
 

@@ -31,7 +31,8 @@ public interface StatsTfIdfFunction {
    * The Double may be null for special functions which are also configured to filter.
    * @param t - the corpus stats for the term
    * @param nDocs - the total number of documents in the corpus the corpus stats are from
-   * @param nTerms - the total number of words/terms in the corpus the corpus stats are from
+   * @param nWords - total number of words (not distinct terms) in the corpus
+   * @param nTerms - the total number of distinct words/terms in the corpus the corpus stats are from
    * @param tf - the local term frequency of the term in the current document
    * @param maxTf - the local maximum term frequency of any term in the current document
    * @param sumTf - the number of all terms in the current document
@@ -40,5 +41,5 @@ public interface StatsTfIdfFunction {
    * thresholds/
    * @return TODO
    */
-  public Double apply(TermStats t, long nDocs, long nTerms, long tf, long maxTf, long sumTf, Map<String,Object> options);
+  public Double apply(TermStats t, long nDocs, long nWords, long nTerms, long tf, long maxTf, long sumTf, Map<String,Object> options);
 }
